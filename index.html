@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Toloba Kuliatul Mumenoon Receipt Generator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      padding: 30px;
+    }
+
+    header {
+      width: 100%;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      text-align: center;
+      padding: 30px 20px;
+      border-radius: 12px 12px 0 0;
+      font-weight: 600;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
+      user-select: none;
+      margin: -30px -30px 0 -30px;
+    }
+
+    .form-section {
+      flex: 1 1 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-section h2 {
+      color: #2e7d32;
+      font-weight: 700;
+      font-size: 1.6rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 8px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    input, textarea {
+      padding: 12px 14px;
+      font-size: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      transition: border-color 0.3s ease;
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #4caf50;
+      box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+      background-color: #fff;
+    }
+
+    button {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 14px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+      width: 100%;
+      margin-top: 10px;
+      user-select: none;
+    }
+
+    button:hover:not(:disabled) {
+      background: #2e7d32;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    button.download {
+      background: #ff5722;
+      margin-top: 10px;
+    }
+
+    button.download:hover:not(:disabled) {
+      background: #e64a19;
+    }
+
+    .status {
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .status.success {
+      background: #e8f5e8;
+      color: #2e7d32;
+      border: 1px solid #4caf50;
+    }
+
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #f44336;
+    }
+
+    .status.info {
+      background: #e3f2fd;
+      color: #1565c0;
+      border: 1px solid #2196f3;
+    }
+
+    .progress {
+      width: 100%;
+      height: 20px;
+      background: #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4caf50, #2e7d32);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .receipt-section {
+      flex: 1 1 450px;
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 30px 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+
+    .receipt-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      border-bottom: 2px solid #4caf50;
+      padding-bottom: 15px;
+      justify-content: center;
+    }
+
+    .receipt-logo {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1.5px solid #4caf50;
+      background: white;
+      padding: 5px;
+      box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+    }
+
+    .receipt-header h3 {
+      font-size: 1.8rem;
+      color: #2e7d32;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    .receipt-header p {
+      color: #555;
+      font-size: 1rem;
+      margin-top: 4px;
+      user-select: none;
+    }
+
+    .receipt-details {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 1.1rem;
+      color: #444;
+      text-align: center;
+    }
+
+    .receipt-item {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 8px;
+      user-select: none;
+    }
+
+    .receipt-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-label {
+      font-weight: 600;
+      color: #2e7d32;
+      min-width: 130px;
+      text-align: right;
+    }
+
+    .signature {
+      margin-top: 40px;
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      font-style: italic;
+      color: #666;
+      user-select: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        padding: 20px;
+      }
+
+      .form-section,
+      .receipt-section {
+        flex: 1 1 100%;
+        max-width: 100%;
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>Toloba Kuliatul Mumenoon Receipt Generator</header>
+
+    <div class="form-section">
+      <h2>Google Sheets Integration</h2>
+
+      <div class="form-group">
+        <label for="sheet-url">Google Sheets Share Link (CSV)</label>
+        <textarea id="sheet-url" placeholder="Paste your Google Sheets share link here...
+Example: https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit#gid=0
+
+Or CSV export URL:
+https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></textarea>
+      </div>
+
+      <button id="load-sheet">Load Sheet Data</button>
+
+      <div id="status-container"></div>
+
+      <div class="progress" id="progress-container" style="display: none;">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <h2>Manual Entry</h2>
+
+      <div class="form-group">
+        <label for="event-name">For</label>
+        <input type="text" id="event-name" placeholder="Enter event name" />
+      </div>
+
+      <div class="form-group">
+        <label for="person-name">Person Name</label>
+        <input type="text" id="person-name" placeholder="Enter person name" />
+      </div>
+
+      <div class="form-group">
+        <label for="mobile-no">Mobile Number</label>
+        <input type="text" id="mobile-no" placeholder="Enter mobile number" />
+      </div>
+
+      <div class="form-group">
+        <label for="amount-paid">Amount Paid (Rs.)</label>
+        <input type="number" id="amount-paid" placeholder="Enter amount" />
+      </div>
+
+      <button id="generate-single">Generate Single Receipt</button>
+      <button id="download-single-pdf" class="download">Download Single Receipt as PDF</button>
+      <button id="download-pdf" class="download" disabled>Download All Receipts as PDF</button>
+    </div>
+
+    <div class="receipt-section">
+      <div class="receipt" id="receipt">
+        <div class="receipt-header">
+          <img
+            src="logo.png"
+            alt="Logo"
+            class="receipt-logo"
+            onerror="this.style.display='none'"
+          />
+          <div>
+            <h3>Toloba Kuliatul Mumenoon</h3>
+            <p>Official Receipt</p>
+          </div>
+        </div>
+
+        <div class="receipt-details">
+          <div class="receipt-item">
+            <span class="item-label">For:</span>
+            <span id="receipt-event">-</span>
+          </div>
+
+          <div class="receipt-item">
+            <span class="item-label">Person Name:</span>
+            <span id="receipt-person">-</span>
+          </div>
+
+          <div class="receipt-item">
+            <span class="item-label">Mobile No:</span>
+            <span id="receipt-mobile">-</span>
+          </div>
+
+          <div class="receipt-item">
+            <span class="item-label">Amount Paid:</span>
+            <span id="receipt-amount">Rs. 0/-</span>
+          </div>
+
+          <div class="receipt-item">
+            <span class="item-label">Date:</span>
+            <span id="receipt-date">-</span>
+          </div>
+
+          <div class="receipt-item">
+            <span class="item-label">Day:</span>
+            <span id="receipt-day">-</span>
+          </div>
+        </div>
+
+        <div class="signature">
+          <p>Authorized Signature</p>
+          <p>_________________________</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let allReceiptsData = [];
+
+      // Form inputs
+      const eventNameInput   = document.getElementById('event-name');
+      const personNameInput  = document.getElementById('person-name');
+      const mobileNoInput    = document.getElementById('mobile-no');
+      const amountPaidInput  = document.getElementById('amount-paid');
+      const sheetUrlInput    = document.getElementById('sheet-url');
+
+      // Receipt display elements
+      const receiptEvent  = document.getElementById('receipt-event');   // ✅ fixed: was receiptFor
+      const receiptPerson = document.getElementById('receipt-person');
+      const receiptMobile = document.getElementById('receipt-mobile');
+      const receiptAmount = document.getElementById('receipt-amount');
+      const receiptDate   = document.getElementById('receipt-date');
+      const receiptDay    = document.getElementById('receipt-day');
+
+      // UI controls
+      const statusContainer   = document.getElementById('status-container');
+      const progressContainer = document.getElementById('progress-container');
+      const progressBar       = document.getElementById('progress-bar');
+      const downloadPdfBtn    = document.getElementById('download-pdf');
+      const downloadSingleBtn = document.getElementById('download-single-pdf');
+
+      // ─── Helpers ────────────────────────────────────────────────────────────
+
+      function showStatus(message, type = 'info') {
+        statusContainer.innerHTML = `<div class="status ${type}">${message}</div>`;
+      }
+
+      function clearStatus() {
+        statusContainer.innerHTML = '';
+      }
+
+      function updateProgress(percent) {
+        progressBar.style.width = `${percent}%`;
+        if (percent >= 100) {
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+          }, 800);
+        }
+      }
+
+      function getCurrentDateStrings() {
+        const now = new Date();
+        return {
+          date: now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+          day:  now.toLocaleDateString('en-US', { weekday: 'long' })
+        };
+      }
+
+      function updateDateDisplay() {
+        const { date, day } = getCurrentDateStrings();
+        receiptDate.textContent = date;
+        receiptDay.textContent  = day;
+      }
+
+      // ─── Single receipt preview ──────────────────────────────────────────────
+
+      function generateSingleReceipt(data = null) {
+        const { date, day } = getCurrentDateStrings();
+
+        receiptEvent.textContent  = data?.eventName  || eventNameInput.value.trim()  || '-';
+        receiptPerson.textContent = data?.personName || personNameInput.value.trim() || '-';
+        receiptMobile.textContent = data?.mobileNo   || mobileNoInput.value.trim()   || '-';
+        receiptAmount.textContent = `Rs. ${data?.amountPaid || amountPaidInput.value.trim() || '0'}/-`;
+        receiptDate.textContent   = date;
+        receiptDay.textContent    = day;
+      }
+
+      // ─── URL conversion ──────────────────────────────────────────────────────
+
+      function convertShareUrlToCsvUrl(shareUrl) {
+        const sheetIdMatch = shareUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL — could not find Sheet ID.');
+
+        const sheetId = sheetIdMatch[1];
+        const gidMatch = shareUrl.match(/[#&?]gid=([0-9]+)/);
+        const gid = gidMatch ? gidMatch[1] : '0';
+
+        // If it's already a CSV export URL, return as-is
+        if (shareUrl.includes('export?format=csv')) return shareUrl;
+
+        return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+      }
+
+      // ─── CSV parser (handles quoted fields & Windows line endings) ───────────
+
+      function parseCSV(csvText) {
+        // Normalize Windows (\r\n) and old Mac (\r) line endings
+        const lines = csvText.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+        if (lines.length < 2) throw new Error('CSV must have at least a header row and one data row.');
+
+        const headers = parseCsvLine(lines[0]);
+        const rows    = lines.slice(1);
+
+        return rows
+          .map(row => {
+            const values = parseCsvLine(row);
+            const obj    = {};
+            headers.forEach((h, i) => { obj[h] = (values[i] || '').trim(); });
+            return Object.values(obj).some(v => v) ? obj : null;
+          })
+          .filter(Boolean);
+      }
+
+      function parseCsvLine(line) {
+        const values = [];
+        let current  = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            // Handle escaped quotes ("")
+            if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+            else inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) {
+            values.push(current.trim());
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+        values.push(current.trim());
+        return values;
+      }
+
+      // ─── Map CSV row to receipt fields (flexible column matching) ───────────
+
+      function mapRowToReceipt(row) {
+        const find = (...keywords) => {
+          const key = Object.keys(row).find(k =>
+            keywords.some(kw => k.toLowerCase().includes(kw.toLowerCase()))
+          );
+          return key ? row[key] : '';
+        };
+
+        const { date, day } = getCurrentDateStrings();
+
+        return {
+          eventName:  find('event', 'for', 'purpose') || '-',
+          personName: find('name', 'person', 'member') || '-',
+          mobileNo:   find('mobile', 'phone', 'contact', 'number') || '-',
+          amountPaid: find('amount', 'paid', 'fee', 'rs', 'rupee') || '0',
+          date,
+          day
+        };
+      }
+
+      // ─── Load sheet ──────────────────────────────────────────────────────────
+
+      async function loadSheetData() {
+        const url = sheetUrlInput.value.trim();
+        if (!url) { showStatus('Please enter a Google Sheets URL.', 'error'); return; }
+
+        clearStatus();
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        downloadPdfBtn.disabled = true;
+
+        try {
+          showStatus('Converting share URL to CSV format…', 'info');
+          const csvUrl = convertShareUrlToCsvUrl(url);
+
+          showStatus('Fetching data from Google Sheets…', 'info');
+          updateProgress(20);
+
+          const response = await fetch(csvUrl);
+          if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+          updateProgress(50);
+          const csvText = await response.text();
+
+          if (!csvText || !csvText.trim()) throw new Error('The sheet appears to be empty or inaccessible.');
+
+          updateProgress(70);
+          const dataRows = parseCSV(csvText);
+
+          if (dataRows.length === 0) throw new Error('No valid data rows found in the sheet.');
+
+          allReceiptsData = dataRows.map(mapRowToReceipt);
+
+          updateProgress(100);
+          showStatus(`✅ Successfully loaded ${allReceiptsData.length} receipt(s). Ready to download.`, 'success');
+          downloadPdfBtn.disabled = false;
+
+          // Preview first record
+          if (allReceiptsData.length > 0) generateSingleReceipt(allReceiptsData[0]);
+
+        } catch (err) {
+          console.error('Sheet load error:', err);
+          showStatus(`❌ Error: ${err.message}`, 'error');
+          progressContainer.style.display = 'none';
+          progressBar.style.width = '0%';
+          downloadPdfBtn.disabled = true;
+        }
+      }
+
+      // ─── PDF builder (shared) ────────────────────────────────────────────────
+
+      function buildReceiptPage(pdf, receipt) {
+        const { jsPDF } = window.jspdf;
+
+        // Header
+        pdf.setFontSize(20);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(46, 125, 50);
+        pdf.text('Toloba Kuliatul Mumenoon', 105, 30, { align: 'center' });
+
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(85, 85, 85);
+        pdf.text('Official Receipt', 105, 40, { align: 'center' });
+
+        // Separator line
+        pdf.setDrawColor(76, 175, 80);
+        pdf.setLineWidth(0.8);
+        pdf.line(20, 48, 190, 48);
+
+        // Detail rows
+        const details = [
+          ['For:',          receipt.eventName],
+          ['Person Name:',  receipt.personName],
+          ['Mobile No:',    receipt.mobileNo],
+          ['Amount Paid:',  `Rs. ${receipt.amountPaid}/-`],
+          ['Date:',         receipt.date],
+          ['Day:',          receipt.day]
+        ];
+
+        let y = 68;
+        const lineHeight = 14;
+
+        details.forEach(([label, value]) => {
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(46, 125, 50);
+          pdf.text(label, 30, y);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(60, 60, 60);
+          pdf.text(String(value || '-'), 80, y);
+
+          // Dashed separator
+          pdf.setDrawColor(200, 200, 200);
+          pdf.setLineWidth(0.3);
+          pdf.setLineDashPattern([1, 2], 0);
+          pdf.line(30, y + 3, 180, y + 3);
+          pdf.setLineDashPattern([], 0);
+
+          y += lineHeight;
+        });
+
+        // Signature
+        const sigY = y + 35;
+        pdf.setDrawColor(180, 180, 180);
+        pdf.setLineWidth(0.5);
+        pdf.line(65, sigY, 145, sigY);
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(120, 120, 120);
+        pdf.text('Authorized Signature', 105, sigY + 8, { align: 'center' });
+      }
+
+      // ─── Download single receipt PDF ─────────────────────────────────────────
+
+      function downloadSinglePDF() {
+        try {
+          showStatus('Generating PDF…', 'info');
+          downloadSingleBtn.disabled = true;
+
+          const receipt = {
+            eventName:  receiptEvent.textContent  || '-',
+            personName: receiptPerson.textContent || '-',
+            mobileNo:   receiptMobile.textContent || '-',
+            amountPaid: (receiptAmount.textContent || 'Rs. 0/-').replace('Rs. ', '').replace('/-', ''),
+            date:       receiptDate.textContent   || '-',
+            day:        receiptDay.textContent    || '-'
+          };
+
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          buildReceiptPage(pdf, receipt);
+
+          const dateStr    = new Date().toISOString().slice(0, 10);
+          const safeName   = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_');
+          pdf.save(`Receipt_${safeName}_${dateStr}.pdf`);
+
+          showStatus('✅ Single receipt PDF downloaded!', 'success');
+        } catch (err) {
+          console.error('Single PDF error:', err);
+          showStatus('❌ Error generating PDF. Please try again.', 'error');
+        } finally {
+          downloadSingleBtn.disabled = false;
+        }
+      }
+
+      // ─── Download all receipts PDF ───────────────────────────────────────────
+
+      function downloadAllPDF() {
+        if (allReceiptsData.length === 0) {
+          showStatus('No data loaded. Please load Google Sheets data first.', 'error');
+          return;
+        }
+
+        try {
+          showStatus(`Generating PDF for ${allReceiptsData.length} receipt(s)…`, 'info');
+          downloadPdfBtn.disabled = true;
+
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF('p', 'mm', 'a4');
+
+          allReceiptsData.forEach((receipt, index) => {
+            if (index > 0) pdf.addPage();
+            buildReceiptPage(pdf, receipt);
+          });
+
+          const dateStr = new Date().toISOString().slice(0, 10);
+          pdf.save(`Toloba_Receipts_${dateStr}.pdf`);
+
+          showStatus(`✅ Downloaded ${allReceiptsData.length} receipt(s) as PDF!`, 'success');
+        } catch (err) {
+          console.error('Bulk PDF error:', err);
+          showStatus('❌ Error generating PDF. Please try again.', 'error');
+        } finally {
+          downloadPdfBtn.disabled = false;
+        }
+      }
+
+      // ─── Event listeners ─────────────────────────────────────────────────────
+
+      document.getElementById('load-sheet').addEventListener('click', loadSheetData);
+      document.getElementById('generate-single').addEventListener('click', () => generateSingleReceipt());
+      downloadSingleBtn.addEventListener('click', downloadSinglePDF);
+      downloadPdfBtn.addEventListener('click', downloadAllPDF);
+
+      // Initialise date on load
+      updateDateDisplay();
+    });
+  </script>
+</body>
+</html>
