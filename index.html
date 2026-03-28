@@ -583,26 +583,63 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
         }
       }
 
+      // ─── Logo loader (converts logo.png to base64 once) ─────────────────────
+
+      let logoBase64 = null;
+      let logoMime   = 'PNG';
+
+      async function loadLogoBase64() {
+        if (logoBase64) return logoBase64;
+        try {
+          const res = await fetch('logo.png');
+          if (!res.ok) return null;
+          const blob = await res.blob();
+          return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const dataUrl = reader.result;            // "data:image/png;base64,..."
+              logoBase64 = dataUrl.split(',')[1];       // raw base64 string
+              const mimeMatch = dataUrl.match(/data:image\/(\w+);/);
+              if (mimeMatch) logoMime = mimeMatch[1].toUpperCase();
+              resolve(logoBase64);
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        } catch {
+          return null;
+        }
+      }
+
       // ─── PDF builder (shared) ────────────────────────────────────────────────
 
-      function buildReceiptPage(pdf, receipt) {
+      function buildReceiptPage(pdf, receipt, logoB64) {
         const { jsPDF } = window.jspdf;
+
+        // Logo (top-left of header area)
+        if (logoB64) {
+          try {
+            pdf.addImage(logoB64, logoMime, 20, 15, 20, 20);
+          } catch (e) {
+            console.warn('Logo embed failed:', e);
+          }
+        }
 
         // Header
         pdf.setFontSize(20);
         pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(46, 125, 50);
-        pdf.text('Toloba Kuliatul Mumenoon', 105, 30, { align: 'center' });
+        pdf.text('Toloba Kuliatul Mumenoon', 105, 22, { align: 'center' });
 
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(85, 85, 85);
-        pdf.text('Official Receipt', 105, 40, { align: 'center' });
+        pdf.text('Official Receipt', 105, 30, { align: 'center' });
 
         // Separator line
         pdf.setDrawColor(76, 175, 80);
         pdf.setLineWidth(0.8);
-        pdf.line(20, 48, 190, 48);
+        pdf.line(20, 40, 190, 40);
 
         // Detail rows
         const details = [
@@ -614,7 +651,7 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
           ['Day:',          receipt.day]
         ];
 
-        let y = 68;
+        let y = 58;
         const lineHeight = 14;
 
         details.forEach(([label, value]) => {
@@ -650,7 +687,7 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
 
       // ─── Download single receipt PDF ─────────────────────────────────────────
 
-      function downloadSinglePDF() {
+      async function downloadSinglePDF() {
         try {
           showStatus('Generating PDF…', 'info');
           downloadSingleBtn.disabled = true;
@@ -664,9 +701,11 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
             day:        receiptDay.textContent    || '-'
           };
 
+          const logo = await loadLogoBase64();
+
           const { jsPDF } = window.jspdf;
           const pdf = new jsPDF('p', 'mm', 'a4');
-          buildReceiptPage(pdf, receipt);
+          buildReceiptPage(pdf, receipt, logo);
 
           const dateStr    = new Date().toISOString().slice(0, 10);
           const safeName   = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_');
@@ -681,47 +720,162 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
         }
       }
 
-      // ─── Download all receipts PDF ───────────────────────────────────────────
+      // ─── Download all receipts — one PDF each, bundled in a ZIP ────────────
 
-      function downloadAllPDF() {
+      async function downloadAllPDF() {
         if (allReceiptsData.length === 0) {
           showStatus('No data loaded. Please load Google Sheets data first.', 'error');
           return;
         }
 
         try {
-          showStatus(`Generating PDF for ${allReceiptsData.length} receipt(s)…`, 'info');
+          showStatus(`Generating ${allReceiptsData.length} individual PDF(s)…`, 'info');
           downloadPdfBtn.disabled = true;
 
+          const logo = await loadLogoBase64();
           const { jsPDF } = window.jspdf;
-          const pdf = new jsPDF('p', 'mm', 'a4');
-
-          allReceiptsData.forEach((receipt, index) => {
-            if (index > 0) pdf.addPage();
-            buildReceiptPage(pdf, receipt);
-          });
-
           const dateStr = new Date().toISOString().slice(0, 10);
-          pdf.save(`Toloba_Receipts_${dateStr}.pdf`);
 
-          showStatus(`✅ Downloaded ${allReceiptsData.length} receipt(s) as PDF!`, 'success');
+          // Download each receipt as its own PDF file
+          for (let index = 0; index < allReceiptsData.length; index++) {
+            const receipt  = allReceiptsData[index];
+            const pdf      = new jsPDF('p', 'mm', 'a4');
+            buildReceiptPage(pdf, receipt, logo);
+
+            const safeName = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_') || `Receipt_${index + 1}`;
+            pdf.save(`Receipt_${String(index + 1).padStart(3, '0')}_${safeName}_${dateStr}.pdf`);
+
+            // Small delay so the browser doesn't block rapid downloads
+            if (index < allReceiptsData.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+
+          showStatus(`✅ Downloaded ${allReceiptsData.length} individual receipt PDF(s)!`, 'success');
         } catch (err) {
           console.error('Bulk PDF error:', err);
-          showStatus('❌ Error generating PDF. Please try again.', 'error');
+          showStatus('❌ Error generating PDFs. Please try again.', 'error');
         } finally {
           downloadPdfBtn.disabled = false;
         }
       }
 
+      // ─── Persist sheet URL in localStorage ──────────────────────────────────
+
+      const STORAGE_KEY    = 'toloba_sheet_url';
+      const POLL_INTERVAL  = 30000; // re-check Google Sheet every 30 seconds
+      let   pollTimer      = null;
+      let   lastCsvText    = null;  // track last fetched CSV to detect changes
+
+      // Restore saved URL on page load
+      const savedUrl = localStorage.getItem(STORAGE_KEY);
+      if (savedUrl) sheetUrlInput.value = savedUrl;
+
+      // Save URL whenever it changes
+      sheetUrlInput.addEventListener('input', () => {
+        const val = sheetUrlInput.value.trim();
+        if (val) localStorage.setItem(STORAGE_KEY, val);
+        else     localStorage.removeItem(STORAGE_KEY);
+      });
+
+      // ─── Silent background refresh (only updates if data changed) ────────────
+
+      async function silentRefresh() {
+        const url = sheetUrlInput.value.trim();
+        if (!url || !url.includes('docs.google.com/spreadsheets')) return;
+
+        try {
+          const csvUrl  = convertShareUrlToCsvUrl(url);
+          const res     = await fetch(csvUrl + '&t=' + Date.now()); // bust cache
+          if (!res.ok) return;
+
+          const csvText = await res.text();
+          if (!csvText || !csvText.trim()) return;
+
+          // Only update if sheet content has actually changed
+          if (csvText === lastCsvText) return;
+          lastCsvText = csvText;
+
+          const dataRows = parseCSV(csvText);
+          if (dataRows.length === 0) return;
+
+          const prevCount    = allReceiptsData.length;
+          allReceiptsData    = dataRows.map(mapRowToReceipt);
+          const newCount     = allReceiptsData.length;
+          const added        = newCount - prevCount;
+
+          downloadPdfBtn.disabled = false;
+          generateSingleReceipt(allReceiptsData[allReceiptsData.length - 1]);
+
+          const msg = added > 0
+            ? `🔄 ${added} new entry${added > 1 ? 's' : ''} detected! Total: ${newCount} receipt(s).`
+            : `🔄 Sheet updated — ${newCount} receipt(s) loaded.`;
+          showStatus(msg, 'success');
+
+          // Flash the receipt section to signal new data
+          const receiptSection = document.querySelector('.receipt-section');
+          receiptSection.style.transition = 'box-shadow 0.3s ease';
+          receiptSection.style.boxShadow  = '0 0 0 3px #4caf50';
+          setTimeout(() => { receiptSection.style.boxShadow = ''; }, 1500);
+
+        } catch (err) {
+          console.warn('Silent refresh error:', err);
+        }
+      }
+
+      function startPolling() {
+        stopPolling();
+        pollTimer = setInterval(silentRefresh, POLL_INTERVAL);
+      }
+
+      function stopPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      }
+
+      // ─── Auto-load when a valid Sheets URL is pasted / typed ─────────────────
+
+      let autoLoadTimer = null;
+
+      sheetUrlInput.addEventListener('input', () => {
+        clearTimeout(autoLoadTimer);
+        stopPolling();
+        const val = sheetUrlInput.value.trim();
+        if (val.includes('docs.google.com/spreadsheets')) {
+          autoLoadTimer = setTimeout(async () => {
+            await loadSheetData();
+            startPolling();
+          }, 800);
+        }
+      });
+
+      // ─── Patch loadSheetData to capture lastCsvText & start polling ──────────
+
+      const _origLoad = loadSheetData;
+      loadSheetData = async function () {
+        await _origLoad();
+        // capture the raw CSV after a successful load so silentRefresh can diff
+        try {
+          const url    = sheetUrlInput.value.trim();
+          if (!url) return;
+          const csvUrl = convertShareUrlToCsvUrl(url);
+          const res    = await fetch(csvUrl + '&t=' + Date.now());
+          if (res.ok) lastCsvText = await res.text();
+        } catch { /* ignore */ }
+        startPolling();
+      };
+
       // ─── Event listeners ─────────────────────────────────────────────────────
 
       document.getElementById('load-sheet').addEventListener('click', loadSheetData);
       document.getElementById('generate-single').addEventListener('click', () => generateSingleReceipt());
-      downloadSingleBtn.addEventListener('click', downloadSinglePDF);
-      downloadPdfBtn.addEventListener('click', downloadAllPDF);
+      downloadSingleBtn.addEventListener('click', () => downloadSinglePDF());
+      downloadPdfBtn.addEventListener('click', () => downloadAllPDF());
 
-      // Initialise date on load
+      // Initialise date on load, then auto-load if a saved URL exists
       updateDateDisplay();
+      if (savedUrl && savedUrl.includes('docs.google.com/spreadsheets')) {
+        loadSheetData();
+      }
     });
   </script>
 </body>
