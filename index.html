@@ -271,6 +271,55 @@
         max-width: 100%;
       }
     }
+
+    .setup-instructions {
+      background: #f0f9f0;
+      border: 1px solid #c8e6c9;
+      border-radius: 10px;
+      padding: 16px 18px;
+      font-size: 0.92rem;
+      color: #333;
+      margin-top: 8px;
+    }
+
+    .setup-instructions h3 {
+      color: #2e7d32;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .setup-instructions ol {
+      padding-left: 18px;
+      line-height: 2;
+    }
+
+    .setup-instructions a {
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .setup-instructions details {
+      margin-top: 12px;
+    }
+
+    .setup-instructions summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #2e7d32;
+      padding: 6px 0;
+    }
+
+    .setup-instructions pre {
+      background: #1e1e1e;
+      color: #d4f1d4;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      overflow-x: auto;
+      white-space: pre;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -282,12 +331,23 @@
       <h2>Google Sheets Integration</h2>
 
       <div class="form-group">
-        <label for="sheet-url">Google Sheets Share Link (CSV)</label>
-        <textarea id="sheet-url" placeholder="Paste your Google Sheets share link here...
-Example: https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit#gid=0
+        <label for="sheet-url">Google Sheets Source <span style="color:#4caf50;font-size:0.85rem;">✔ Saved</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="sheet-url"
+            placeholder="Paste your Google Sheets link once…"
+            style="flex:1;background:#f0f9f0;border-color:#4caf50;" />
+          <button id="clear-sheet-url" title="Clear saved URL"
+            style="width:auto;padding:12px 14px;margin:0;background:#e53935;font-size:0.9rem;">✕</button>
+        </div>
+        <small id="sheet-url-hint" style="color:#888;font-size:0.82rem;margin-top:3px;">
+          Paste once — saved permanently. Data auto-fetches on every page load.
+        </small>
+      </div>
 
-Or CSV export URL:
-https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></textarea>
+      <div class="form-group">
+        <label for="apps-script-url">Google Apps Script URL (for logging downloaded receipts)</label>
+        <input type="text" id="apps-script-url" placeholder="Paste your Apps Script Web App URL here…" />
+        <small style="color:#888;font-size:0.85rem;margin-top:4px;">See setup instructions below ↓</small>
       </div>
 
       <button id="load-sheet">Load Sheet Data</button>
@@ -323,6 +383,135 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
       <button id="generate-single">Generate Single Receipt</button>
       <button id="download-single-pdf" class="download">Download Single Receipt as PDF</button>
       <button id="download-pdf" class="download" disabled>Download All Receipts as PDF</button>
+
+      <div class="setup-instructions">
+        <h3>⚙️ One-time Setup — Apps Script</h3>
+        <ol>
+          <li>Open your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1KexCWPsa9F8L-6tmTX__yqfGaO8nKUu1rNPL8Is1zUc/edit" target="_blank">Click here →</a></li>
+          <li>Go to <strong>Extensions → Apps Script</strong></li>
+          <li>Delete any existing code and paste the script below</li>
+          <li>Click <strong>Deploy → New deployment → Web app</strong></li>
+          <li>Set <em>"Execute as"</em> to <strong>Me</strong> and <em>"Who has access"</em> to <strong>Anyone</strong></li>
+          <li>Click <strong>Deploy</strong>, authorize, then copy the Web App URL</li>
+          <li>Paste that URL in the <em>Apps Script URL</em> field above</li>
+        </ol>
+        <p style="margin-top:8px;color:#555;font-size:0.9rem;">📁 PDFs will be saved to a folder called <strong>"Toloba Receipts"</strong> in your Google Drive and logged in a <strong>"Downloaded Receipts"</strong> sheet tab.</p>
+        <details>
+          <summary>📋 Copy Apps Script code</summary>
+          <pre id="apps-script-code">// ════════════════════════════════════════════════════════════════
+//  Toloba Kuliatul Mumenoon — Smart Receipt Tracker
+//  Paste into: Extensions > Apps Script > Code.gs
+//  Deploy → Web App → Execute as: Me → Access: Anyone
+// ════════════════════════════════════════════════════════════════
+
+const LOG_SHEET_NAME = 'Downloaded Receipts';
+const DRIVE_FOLDER   = 'Toloba Receipts';
+
+function makeFingerprint(personName, mobileNo, amountPaid, eventName) {
+  return [personName, mobileNo, amountPaid, eventName]
+    .join('|').toLowerCase().trim();
+}
+
+function getLogSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(LOG_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(LOG_SHEET_NAME);
+    var headers = ['#','Fingerprint','Person Name','Mobile No',
+                   'Event / For','Amount Paid','Receipt Date',
+                   'Downloaded At (IST)','Drive Link'];
+    sheet.appendRow(headers);
+    var h = sheet.getRange(1,1,1,headers.length);
+    h.setFontWeight('bold').setBackground('#2e7d32')
+     .setFontColor('#ffffff').setHorizontalAlignment('center');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidths(1, headers.length, 150);
+    sheet.setColumnWidth(2, 260);
+    sheet.setColumnWidth(9, 120);
+  }
+  return sheet;
+}
+
+function getDriveFolder() {
+  var iter = DriveApp.getFoldersByName(DRIVE_FOLDER);
+  return iter.hasNext() ? iter.next() : DriveApp.createFolder(DRIVE_FOLDER);
+}
+
+function fingerprintExists(sheet, fingerprint) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return false;
+  var fps = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
+  return fps.includes(fingerprint);
+}
+
+// GET ?action=list — returns all printed fingerprints
+function doGet(e) {
+  var action = (e.parameter.action || '').trim();
+  if (action === 'list') {
+    var sheet   = getLogSheet();
+    var lastRow = sheet.getLastRow();
+    var fps     = lastRow < 2 ? [] :
+      sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat().filter(Boolean);
+    return jsonOk({ fingerprints: fps });
+  }
+  return jsonOk({ error: 'Use ?action=list' });
+}
+
+// POST — save PDF to Drive, log to sheet (with duplicate guard)
+function doPost(e) {
+  try {
+    var data        = JSON.parse(e.postData.contents);
+    var personName  = (data.personName  || '').trim();
+    var mobileNo    = (data.mobileNo    || '').trim();
+    var amountPaid  = (data.amountPaid  || '').trim();
+    var eventName   = (data.eventName   || '').trim();
+    var receiptDate = (data.date        || '').trim();
+    var pdfBase64   = (data.pdfBase64   || '').trim();
+    var fileName    = (data.fileName    || 'Receipt.pdf').trim();
+    var fingerprint = makeFingerprint(personName, mobileNo, amountPaid, eventName);
+    var sheet       = getLogSheet();
+
+    if (fingerprintExists(sheet, fingerprint)) {
+      return jsonOk({ success: false, duplicate: true,
+                      message: 'Already recorded — skipping duplicate.' });
+    }
+
+    var driveLink = '';
+    if (pdfBase64) {
+      var folder   = getDriveFolder();
+      var pdfBytes = Utilities.base64Decode(pdfBase64);
+      var blob     = Utilities.newBlob(pdfBytes, 'application/pdf', fileName);
+      var file     = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      driveLink = file.getUrl();
+    }
+
+    var ist     = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'dd/MM/yyyy HH:mm:ss');
+    var rowNum  = sheet.getLastRow();
+    sheet.appendRow([rowNum, fingerprint, personName, mobileNo, eventName,
+                     'Rs. ' + amountPaid + '/-', receiptDate, ist, driveLink]);
+
+    if (driveLink) {
+      sheet.getRange(sheet.getLastRow(), 9)
+           .setFormula('=HYPERLINK("' + driveLink + '","📄 Open PDF")');
+    }
+    if (sheet.getLastRow() % 2 === 0)
+      sheet.getRange(sheet.getLastRow(), 1, 1, 9).setBackground('#f1f8f1');
+
+    return jsonOk({ success: true, driveLink: driveLink, fingerprint: fingerprint });
+
+  } catch(err) {
+    return jsonOk({ success: false, error: err.message });
+  }
+}
+
+function jsonOk(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+         .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+          <button onclick="copyScript()" style="margin-top:8px;padding:8px 16px;font-size:0.9rem;">📋 Copy Script</button>
+        </details>
+      </div>
     </div>
 
     <div class="receipt-section">
@@ -568,7 +757,12 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
           allReceiptsData = dataRows.map(mapRowToReceipt);
 
           updateProgress(100);
-          showStatus(`✅ Successfully loaded ${allReceiptsData.length} receipt(s). Ready to download.`, 'success');
+          const unprinted = allReceiptsData.filter(r => !isPrinted(r)).length;
+          const printedCount = allReceiptsData.length - unprinted;
+          const statusMsg = printedCount > 0
+            ? `✅ Loaded ${allReceiptsData.length} receipt(s) — ${unprinted} new, ${printedCount} already printed.`
+            : `✅ Successfully loaded ${allReceiptsData.length} receipt(s). Ready to download.`;
+          showStatus(statusMsg, 'success');
           downloadPdfBtn.disabled = false;
 
           // Preview first record
@@ -689,7 +883,7 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
 
       async function downloadSinglePDF() {
         try {
-          showStatus('Generating PDF…', 'info');
+          showStatus('Checking…', 'info');
           downloadSingleBtn.disabled = true;
 
           const receipt = {
@@ -701,17 +895,39 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
             day:        receiptDay.textContent    || '-'
           };
 
-          const logo = await loadLogoBase64();
+          // Block if already printed (local cache)
+          if (isPrinted(receipt)) {
+            showStatus('⏭️ This receipt has already been downloaded. Not printing again.', 'info');
+            return;
+          }
 
+          showStatus('Generating PDF…', 'info');
+          const logo = await loadLogoBase64();
           const { jsPDF } = window.jspdf;
           const pdf = new jsPDF('p', 'mm', 'a4');
           buildReceiptPage(pdf, receipt, logo);
 
-          const dateStr    = new Date().toISOString().slice(0, 10);
-          const safeName   = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_');
-          pdf.save(`Receipt_${safeName}_${dateStr}.pdf`);
+          const dateStr  = new Date().toISOString().slice(0, 10);
+          const safeName = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_');
+          const fileName = `Receipt_${safeName}_${dateStr}.pdf`;
+          const pdfBase64 = pdf.output('datauristring').split(',')[1];
 
-          showStatus('✅ Single receipt PDF downloaded!', 'success');
+          // Upload to Apps Script first — it is the authoritative duplicate check
+          showStatus('Saving to Drive…', 'info');
+          const result = await uploadToAppsScript(receipt, pdfBase64, fileName);
+
+          if (result.duplicate) {
+            // Server says already recorded — sync locally and stop
+            markPrintedLocal(receipt);
+            showStatus('⏭️ This receipt was already saved to Drive. Not downloading again.', 'info');
+            return;
+          }
+
+          // Safe to save — trigger browser download & mark locally
+          pdf.save(fileName);
+          markPrintedLocal(receipt);
+          showStatus('✅ Receipt downloaded & saved to Drive!', 'success');
+
         } catch (err) {
           console.error('Single PDF error:', err);
           showStatus('❌ Error generating PDF. Please try again.', 'error');
@@ -720,7 +936,7 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
         }
       }
 
-      // ─── Download all receipts — one PDF each, bundled in a ZIP ────────────
+      // ─── Download all receipts — skip already printed, one PDF per new entry ──
 
       async function downloadAllPDF() {
         if (allReceiptsData.length === 0) {
@@ -728,30 +944,63 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
           return;
         }
 
-        try {
-          showStatus(`Generating ${allReceiptsData.length} individual PDF(s)…`, 'info');
-          downloadPdfBtn.disabled = true;
+        // Re-sync from server first so we have the freshest printed list
+        showStatus('Syncing with server…', 'info');
+        await syncPrintedFromServer();
 
-          const logo = await loadLogoBase64();
+        const newReceipts = allReceiptsData.filter(r => !isPrinted(r));
+        const skipped     = allReceiptsData.length - newReceipts.length;
+
+        if (newReceipts.length === 0) {
+          showStatus(`⏭️ All ${allReceiptsData.length} receipt(s) already downloaded. Nothing new to print.`, 'info');
+          return;
+        }
+
+        try {
+          downloadPdfBtn.disabled = true;
+          showStatus(`Downloading ${newReceipts.length} new receipt(s)${skipped > 0 ? ` · skipping ${skipped} already printed` : ''}…`, 'info');
+
+          const logo    = await loadLogoBase64();
           const { jsPDF } = window.jspdf;
           const dateStr = new Date().toISOString().slice(0, 10);
 
-          // Download each receipt as its own PDF file
-          for (let index = 0; index < allReceiptsData.length; index++) {
-            const receipt  = allReceiptsData[index];
+          let downloaded = 0;
+          let dupesFound = 0;
+
+          for (let i = 0; i < newReceipts.length; i++) {
+            const receipt  = newReceipts[i];
             const pdf      = new jsPDF('p', 'mm', 'a4');
             buildReceiptPage(pdf, receipt, logo);
 
-            const safeName = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_') || `Receipt_${index + 1}`;
-            pdf.save(`Receipt_${String(index + 1).padStart(3, '0')}_${safeName}_${dateStr}.pdf`);
+            const safeName  = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_') || `Receipt_${i + 1}`;
+            const fileName  = `Receipt_${String(i + 1).padStart(3, '0')}_${safeName}_${dateStr}.pdf`;
+            const pdfBase64 = pdf.output('datauristring').split(',')[1];
 
-            // Small delay so the browser doesn't block rapid downloads
-            if (index < allReceiptsData.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 300));
+            // Upload to server — authoritative duplicate check happens here
+            const result = await uploadToAppsScript(receipt, pdfBase64, fileName);
+
+            if (result.duplicate) {
+              // Server already has it — mark locally and skip download
+              markPrintedLocal(receipt);
+              dupesFound++;
+              continue;
+            }
+
+            // New receipt confirmed — save to browser
+            pdf.save(fileName);
+            markPrintedLocal(receipt);
+            downloaded++;
+
+            if (i < newReceipts.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 350));
             }
           }
 
-          showStatus(`✅ Downloaded ${allReceiptsData.length} individual receipt PDF(s)!`, 'success');
+          let msg = `✅ Downloaded ${downloaded} new receipt(s) & saved to Drive.`;
+          if (dupesFound > 0) msg += ` ${dupesFound} duplicate(s) caught by server and skipped.`;
+          if (skipped   > 0) msg += ` ${skipped} previously printed also skipped.`;
+          showStatus(msg, 'success');
+
         } catch (err) {
           console.error('Bulk PDF error:', err);
           showStatus('❌ Error generating PDFs. Please try again.', 'error');
@@ -762,21 +1011,159 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
 
       // ─── Persist sheet URL in localStorage ──────────────────────────────────
 
+      // ─── Persist sheet URL — save once, load forever ─────────────────────────
+
       const STORAGE_KEY    = 'toloba_sheet_url';
-      const POLL_INTERVAL  = 30000; // re-check Google Sheet every 30 seconds
+      const SCRIPT_URL_KEY = 'toloba_script_url';
+      const PRINTED_KEY    = 'toloba_printed_receipts';
+      const POLL_INTERVAL  = 30000;
       let   pollTimer      = null;
-      let   lastCsvText    = null;  // track last fetched CSV to detect changes
+      let   lastCsvText    = null;
 
-      // Restore saved URL on page load
+      // Restore Apps Script URL
+      const appsScriptInput = document.getElementById('apps-script-url');
+      const savedScriptUrl  = localStorage.getItem(SCRIPT_URL_KEY);
+      if (savedScriptUrl) appsScriptInput.value = savedScriptUrl;
+      appsScriptInput.addEventListener('input', () => {
+        const val = appsScriptInput.value.trim();
+        if (val) localStorage.setItem(SCRIPT_URL_KEY, val);
+        else     localStorage.removeItem(SCRIPT_URL_KEY);
+      });
+
+      // Restore sheet URL — show it locked in the field
       const savedUrl = localStorage.getItem(STORAGE_KEY);
-      if (savedUrl) sheetUrlInput.value = savedUrl;
+      if (savedUrl) {
+        sheetUrlInput.value    = savedUrl;
+        sheetUrlInput.readOnly = true;
+        sheetUrlInput.style.background   = '#f0f9f0';
+        sheetUrlInput.style.borderColor  = '#4caf50';
+        sheetUrlInput.style.color        = '#2e7d32';
+        sheetUrlInput.style.fontWeight   = '600';
+        document.getElementById('sheet-url-hint').textContent =
+          '✔ Sheet link saved. Fetching data automatically…';
+      }
 
-      // Save URL whenever it changes
+      // Save URL on paste/type — then lock the field
       sheetUrlInput.addEventListener('input', () => {
         const val = sheetUrlInput.value.trim();
-        if (val) localStorage.setItem(STORAGE_KEY, val);
-        else     localStorage.removeItem(STORAGE_KEY);
+        if (val && val.includes('docs.google.com/spreadsheets')) {
+          localStorage.setItem(STORAGE_KEY, val);
+          sheetUrlInput.readOnly = true;
+          sheetUrlInput.style.background  = '#f0f9f0';
+          sheetUrlInput.style.borderColor = '#4caf50';
+          sheetUrlInput.style.color       = '#2e7d32';
+          sheetUrlInput.style.fontWeight  = '600';
+          document.getElementById('sheet-url-hint').textContent =
+            '✔ Sheet link saved permanently. Auto-fetching…';
+          // Trigger load
+          clearTimeout(autoLoadTimer);
+          stopPolling();
+          autoLoadTimer = setTimeout(() => loadSheetData(), 600);
+        } else if (!val) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
       });
+
+      // Clear button — unlocks the field so user can paste a new URL
+      document.getElementById('clear-sheet-url').addEventListener('click', () => {
+        localStorage.removeItem(STORAGE_KEY);
+        sheetUrlInput.value    = '';
+        sheetUrlInput.readOnly = false;
+        sheetUrlInput.style.background  = '';
+        sheetUrlInput.style.borderColor = '';
+        sheetUrlInput.style.color       = '';
+        sheetUrlInput.style.fontWeight  = '';
+        document.getElementById('sheet-url-hint').textContent =
+          'Paste once — saved permanently. Data auto-fetches on every page load.';
+        stopPolling();
+        allReceiptsData = [];
+        downloadPdfBtn.disabled = true;
+        clearStatus();
+        sheetUrlInput.focus();
+      });
+
+      // Copy Apps Script button
+      function copyScript() {
+        const code = document.getElementById('apps-script-code').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+          showStatus('✅ Apps Script code copied to clipboard!', 'success');
+        }).catch(() => {
+          showStatus('❌ Could not copy. Please select and copy the code manually.', 'error');
+        });
+      }
+
+      // ─── Printed-receipt tracker ─────────────────────────────────────────────
+
+      function getPrintedSet() {
+        try { return new Set(JSON.parse(localStorage.getItem(PRINTED_KEY) || '[]')); }
+        catch { return new Set(); }
+      }
+
+      function savePrintedSet(set) {
+        localStorage.setItem(PRINTED_KEY, JSON.stringify([...set]));
+      }
+
+      function receiptFingerprint(receipt) {
+        return [receipt.personName, receipt.mobileNo, receipt.amountPaid, receipt.eventName]
+          .join('|').toLowerCase().trim();
+      }
+
+      function markPrintedLocal(receipt) {
+        const set = getPrintedSet();
+        set.add(receiptFingerprint(receipt));
+        savePrintedSet(set);
+      }
+
+      function isPrinted(receipt) {
+        return getPrintedSet().has(receiptFingerprint(receipt));
+      }
+
+      // ─── Upload PDF to Apps Script (Drive + Sheet), returns {duplicate, driveLink} ──
+
+      async function uploadToAppsScript(receipt, pdfBase64, fileName) {
+        const scriptUrl = document.getElementById('apps-script-url').value.trim();
+        if (!scriptUrl) return { skipped: true };
+
+        try {
+          const res  = await fetch(scriptUrl, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              personName: receipt.personName,
+              mobileNo:   receipt.mobileNo,
+              eventName:  receipt.eventName,
+              amountPaid: receipt.amountPaid,
+              date:       receipt.date,
+              pdfBase64,
+              fileName
+            })
+          });
+          const json = await res.json();
+          return json; // { success, duplicate, driveLink, ... }
+        } catch (err) {
+          console.warn('Apps Script upload failed:', err);
+          return { error: true };
+        }
+      }
+
+      // ─── Sync printed fingerprints FROM Apps Script on load ──────────────────
+
+      async function syncPrintedFromServer() {
+        const scriptUrl = document.getElementById('apps-script-url').value.trim();
+        if (!scriptUrl) return;
+        try {
+          const res  = await fetch(`${scriptUrl}?action=list`);
+          if (!res.ok) return;
+          const json = await res.json();
+          if (Array.isArray(json.fingerprints) && json.fingerprints.length > 0) {
+            const local = getPrintedSet();
+            json.fingerprints.forEach(fp => local.add(fp));
+            savePrintedSet(local);
+          }
+        } catch (err) {
+          console.warn('Server sync failed (non-fatal):', err);
+        }
+      }
 
       // ─── Silent background refresh (only updates if data changed) ────────────
 
@@ -808,8 +1195,8 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
           generateSingleReceipt(allReceiptsData[allReceiptsData.length - 1]);
 
           const msg = added > 0
-            ? `🔄 ${added} new entry${added > 1 ? 's' : ''} detected! Total: ${newCount} receipt(s).`
-            : `🔄 Sheet updated — ${newCount} receipt(s) loaded.`;
+            ? `🔄 ${added} new entry${added > 1 ? 's' : ''} detected! Total: ${newCount} receipt(s) — ${allReceiptsData.filter(r => !isPrinted(r)).length} not yet printed.`
+            : `🔄 Sheet updated — ${newCount} receipt(s) loaded. ${allReceiptsData.filter(r => !isPrinted(r)).length} not yet printed.`;
           showStatus(msg, 'success');
 
           // Flash the receipt section to signal new data
@@ -832,50 +1219,35 @@ https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"></
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
       }
 
-      // ─── Auto-load when a valid Sheets URL is pasted / typed ─────────────────
-
       let autoLoadTimer = null;
-
-      sheetUrlInput.addEventListener('input', () => {
-        clearTimeout(autoLoadTimer);
-        stopPolling();
-        const val = sheetUrlInput.value.trim();
-        if (val.includes('docs.google.com/spreadsheets')) {
-          autoLoadTimer = setTimeout(async () => {
-            await loadSheetData();
-            startPolling();
-          }, 800);
-        }
-      });
-
-      // ─── Patch loadSheetData to capture lastCsvText & start polling ──────────
-
-      const _origLoad = loadSheetData;
-      loadSheetData = async function () {
-        await _origLoad();
-        // capture the raw CSV after a successful load so silentRefresh can diff
-        try {
-          const url    = sheetUrlInput.value.trim();
-          if (!url) return;
-          const csvUrl = convertShareUrlToCsvUrl(url);
-          const res    = await fetch(csvUrl + '&t=' + Date.now());
-          if (res.ok) lastCsvText = await res.text();
-        } catch { /* ignore */ }
-        startPolling();
-      };
 
       // ─── Event listeners ─────────────────────────────────────────────────────
 
-      document.getElementById('load-sheet').addEventListener('click', loadSheetData);
+      document.getElementById('load-sheet').addEventListener('click', () => loadSheetData());
       document.getElementById('generate-single').addEventListener('click', () => generateSingleReceipt());
       downloadSingleBtn.addEventListener('click', () => downloadSinglePDF());
       downloadPdfBtn.addEventListener('click', () => downloadAllPDF());
 
-      // Initialise date on load, then auto-load if a saved URL exists
-      updateDateDisplay();
-      if (savedUrl && savedUrl.includes('docs.google.com/spreadsheets')) {
-        loadSheetData();
+      // ─── Startup: restore, sync, fetch, poll ─────────────────────────────────
+
+      async function startup() {
+        updateDateDisplay();
+        await syncPrintedFromServer();
+
+        const url = sheetUrlInput.value.trim();
+        if (url && url.includes('docs.google.com/spreadsheets')) {
+          await loadSheetData();
+          // Capture baseline CSV for change-detection
+          try {
+            const csvUrl = convertShareUrlToCsvUrl(url);
+            const res    = await fetch(csvUrl + '&t=' + Date.now());
+            if (res.ok) lastCsvText = await res.text();
+          } catch { /* ignore */ }
+          startPolling();
+        }
       }
+
+      startup();
     });
   </script>
 </body>
