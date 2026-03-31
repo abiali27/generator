@@ -271,55 +271,6 @@
         max-width: 100%;
       }
     }
-
-    .setup-instructions {
-      background: #f0f9f0;
-      border: 1px solid #c8e6c9;
-      border-radius: 10px;
-      padding: 16px 18px;
-      font-size: 0.92rem;
-      color: #333;
-      margin-top: 8px;
-    }
-
-    .setup-instructions h3 {
-      color: #2e7d32;
-      margin-bottom: 10px;
-      font-size: 1rem;
-    }
-
-    .setup-instructions ol {
-      padding-left: 18px;
-      line-height: 2;
-    }
-
-    .setup-instructions a {
-      color: #2e7d32;
-      font-weight: 600;
-    }
-
-    .setup-instructions details {
-      margin-top: 12px;
-    }
-
-    .setup-instructions summary {
-      cursor: pointer;
-      font-weight: 600;
-      color: #2e7d32;
-      padding: 6px 0;
-    }
-
-    .setup-instructions pre {
-      background: #1e1e1e;
-      color: #d4f1d4;
-      padding: 14px;
-      border-radius: 8px;
-      font-size: 0.78rem;
-      overflow-x: auto;
-      white-space: pre;
-      margin-top: 10px;
-      line-height: 1.6;
-    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -342,12 +293,6 @@
         <small id="sheet-url-hint" style="color:#888;font-size:0.82rem;margin-top:3px;">
           Paste once — saved permanently. Data auto-fetches on every page load.
         </small>
-      </div>
-
-      <div class="form-group">
-        <label for="apps-script-url">Google Apps Script URL (for logging downloaded receipts)</label>
-        <input type="text" id="apps-script-url" placeholder="Paste your Apps Script Web App URL here…" />
-        <small style="color:#888;font-size:0.85rem;margin-top:4px;">See setup instructions below ↓</small>
       </div>
 
       <button id="load-sheet">Load Sheet Data</button>
@@ -383,135 +328,6 @@
       <button id="generate-single">Generate Single Receipt</button>
       <button id="download-single-pdf" class="download">Download Single Receipt as PDF</button>
       <button id="download-pdf" class="download" disabled>Download All Receipts as PDF</button>
-
-      <div class="setup-instructions">
-        <h3>⚙️ One-time Setup — Apps Script</h3>
-        <ol>
-          <li>Open your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1KexCWPsa9F8L-6tmTX__yqfGaO8nKUu1rNPL8Is1zUc/edit" target="_blank">Click here →</a></li>
-          <li>Go to <strong>Extensions → Apps Script</strong></li>
-          <li>Delete any existing code and paste the script below</li>
-          <li>Click <strong>Deploy → New deployment → Web app</strong></li>
-          <li>Set <em>"Execute as"</em> to <strong>Me</strong> and <em>"Who has access"</em> to <strong>Anyone</strong></li>
-          <li>Click <strong>Deploy</strong>, authorize, then copy the Web App URL</li>
-          <li>Paste that URL in the <em>Apps Script URL</em> field above</li>
-        </ol>
-        <p style="margin-top:8px;color:#555;font-size:0.9rem;">📁 PDFs will be saved to a folder called <strong>"Toloba Receipts"</strong> in your Google Drive and logged in a <strong>"Downloaded Receipts"</strong> sheet tab.</p>
-        <details>
-          <summary>📋 Copy Apps Script code</summary>
-          <pre id="apps-script-code">// ════════════════════════════════════════════════════════════════
-//  Toloba Kuliatul Mumenoon — Smart Receipt Tracker
-//  Paste into: Extensions > Apps Script > Code.gs
-//  Deploy → Web App → Execute as: Me → Access: Anyone
-// ════════════════════════════════════════════════════════════════
-
-const LOG_SHEET_NAME = 'Downloaded Receipts';
-const DRIVE_FOLDER   = 'Toloba Receipts';
-
-function makeFingerprint(personName, mobileNo, amountPaid, eventName) {
-  return [personName, mobileNo, amountPaid, eventName]
-    .join('|').toLowerCase().trim();
-}
-
-function getLogSheet() {
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(LOG_SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(LOG_SHEET_NAME);
-    var headers = ['#','Fingerprint','Person Name','Mobile No',
-                   'Event / For','Amount Paid','Receipt Date',
-                   'Downloaded At (IST)','Drive Link'];
-    sheet.appendRow(headers);
-    var h = sheet.getRange(1,1,1,headers.length);
-    h.setFontWeight('bold').setBackground('#2e7d32')
-     .setFontColor('#ffffff').setHorizontalAlignment('center');
-    sheet.setFrozenRows(1);
-    sheet.setColumnWidths(1, headers.length, 150);
-    sheet.setColumnWidth(2, 260);
-    sheet.setColumnWidth(9, 120);
-  }
-  return sheet;
-}
-
-function getDriveFolder() {
-  var iter = DriveApp.getFoldersByName(DRIVE_FOLDER);
-  return iter.hasNext() ? iter.next() : DriveApp.createFolder(DRIVE_FOLDER);
-}
-
-function fingerprintExists(sheet, fingerprint) {
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return false;
-  var fps = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
-  return fps.includes(fingerprint);
-}
-
-// GET ?action=list — returns all printed fingerprints
-function doGet(e) {
-  var action = (e.parameter.action || '').trim();
-  if (action === 'list') {
-    var sheet   = getLogSheet();
-    var lastRow = sheet.getLastRow();
-    var fps     = lastRow < 2 ? [] :
-      sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat().filter(Boolean);
-    return jsonOk({ fingerprints: fps });
-  }
-  return jsonOk({ error: 'Use ?action=list' });
-}
-
-// POST — save PDF to Drive, log to sheet (with duplicate guard)
-function doPost(e) {
-  try {
-    var data        = JSON.parse(e.postData.contents);
-    var personName  = (data.personName  || '').trim();
-    var mobileNo    = (data.mobileNo    || '').trim();
-    var amountPaid  = (data.amountPaid  || '').trim();
-    var eventName   = (data.eventName   || '').trim();
-    var receiptDate = (data.date        || '').trim();
-    var pdfBase64   = (data.pdfBase64   || '').trim();
-    var fileName    = (data.fileName    || 'Receipt.pdf').trim();
-    var fingerprint = makeFingerprint(personName, mobileNo, amountPaid, eventName);
-    var sheet       = getLogSheet();
-
-    if (fingerprintExists(sheet, fingerprint)) {
-      return jsonOk({ success: false, duplicate: true,
-                      message: 'Already recorded — skipping duplicate.' });
-    }
-
-    var driveLink = '';
-    if (pdfBase64) {
-      var folder   = getDriveFolder();
-      var pdfBytes = Utilities.base64Decode(pdfBase64);
-      var blob     = Utilities.newBlob(pdfBytes, 'application/pdf', fileName);
-      var file     = folder.createFile(blob);
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      driveLink = file.getUrl();
-    }
-
-    var ist     = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'dd/MM/yyyy HH:mm:ss');
-    var rowNum  = sheet.getLastRow();
-    sheet.appendRow([rowNum, fingerprint, personName, mobileNo, eventName,
-                     'Rs. ' + amountPaid + '/-', receiptDate, ist, driveLink]);
-
-    if (driveLink) {
-      sheet.getRange(sheet.getLastRow(), 9)
-           .setFormula('=HYPERLINK("' + driveLink + '","📄 Open PDF")');
-    }
-    if (sheet.getLastRow() % 2 === 0)
-      sheet.getRange(sheet.getLastRow(), 1, 1, 9).setBackground('#f1f8f1');
-
-    return jsonOk({ success: true, driveLink: driveLink, fingerprint: fingerprint });
-
-  } catch(err) {
-    return jsonOk({ success: false, error: err.message });
-  }
-}
-
-function jsonOk(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-         .setMimeType(ContentService.MimeType.JSON);
-}</pre>
-          <button onclick="copyScript()" style="margin-top:8px;padding:8px 16px;font-size:0.9rem;">📋 Copy Script</button>
-        </details>
-      </div>
     </div>
 
     <div class="receipt-section">
@@ -1021,14 +837,9 @@ function jsonOk(obj) {
       let   lastCsvText    = null;
 
       // Restore Apps Script URL
-      const appsScriptInput = document.getElementById('apps-script-url');
-      const savedScriptUrl  = localStorage.getItem(SCRIPT_URL_KEY);
-      if (savedScriptUrl) appsScriptInput.value = savedScriptUrl;
-      appsScriptInput.addEventListener('input', () => {
-        const val = appsScriptInput.value.trim();
-        if (val) localStorage.setItem(SCRIPT_URL_KEY, val);
-        else     localStorage.removeItem(SCRIPT_URL_KEY);
-      });
+      // ─── Apps Script URL (background only — not shown in UI) ────────────────
+      // Paste your deployed Web App URL here:
+      const APPS_SCRIPT_URL = localStorage.getItem(SCRIPT_URL_KEY) || '';
 
       // Restore sheet URL — show it locked in the field
       const savedUrl = localStorage.getItem(STORAGE_KEY);
@@ -1082,16 +893,6 @@ function jsonOk(obj) {
         sheetUrlInput.focus();
       });
 
-      // Copy Apps Script button
-      function copyScript() {
-        const code = document.getElementById('apps-script-code').textContent;
-        navigator.clipboard.writeText(code).then(() => {
-          showStatus('✅ Apps Script code copied to clipboard!', 'success');
-        }).catch(() => {
-          showStatus('❌ Could not copy. Please select and copy the code manually.', 'error');
-        });
-      }
-
       // ─── Printed-receipt tracker ─────────────────────────────────────────────
 
       function getPrintedSet() {
@@ -1121,11 +922,9 @@ function jsonOk(obj) {
       // ─── Upload PDF to Apps Script (Drive + Sheet), returns {duplicate, driveLink} ──
 
       async function uploadToAppsScript(receipt, pdfBase64, fileName) {
-        const scriptUrl = document.getElementById('apps-script-url').value.trim();
-        if (!scriptUrl) return { skipped: true };
-
+        if (!APPS_SCRIPT_URL) return { skipped: true };
         try {
-          const res  = await fetch(scriptUrl, {
+          const res  = await fetch(APPS_SCRIPT_URL, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1138,8 +937,7 @@ function jsonOk(obj) {
               fileName
             })
           });
-          const json = await res.json();
-          return json; // { success, duplicate, driveLink, ... }
+          return await res.json();
         } catch (err) {
           console.warn('Apps Script upload failed:', err);
           return { error: true };
@@ -1149,10 +947,9 @@ function jsonOk(obj) {
       // ─── Sync printed fingerprints FROM Apps Script on load ──────────────────
 
       async function syncPrintedFromServer() {
-        const scriptUrl = document.getElementById('apps-script-url').value.trim();
-        if (!scriptUrl) return;
+        if (!APPS_SCRIPT_URL) return;
         try {
-          const res  = await fetch(`${scriptUrl}?action=list`);
+          const res  = await fetch(`${APPS_SCRIPT_URL}?action=list`);
           if (!res.ok) return;
           const json = await res.json();
           if (Array.isArray(json.fingerprints) && json.fingerprints.length > 0) {
