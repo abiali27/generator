@@ -699,7 +699,6 @@
 
       async function downloadSinglePDF() {
         try {
-          showStatus('Checking…', 'info');
           downloadSingleBtn.disabled = true;
 
           const receipt = {
@@ -711,9 +710,8 @@
             day:        receiptDay.textContent    || '-'
           };
 
-          // Block if already printed (local cache)
           if (isPrinted(receipt)) {
-            showStatus('⏭️ This receipt has already been downloaded. Not printing again.', 'info');
+            showStatus('⏭️ This receipt was already downloaded.', 'info');
             return;
           }
 
@@ -723,26 +721,28 @@
           const pdf = new jsPDF('p', 'mm', 'a4');
           buildReceiptPage(pdf, receipt, logo);
 
-          const dateStr  = new Date().toISOString().slice(0, 10);
-          const safeName = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_');
-          const fileName = `Receipt_${safeName}_${dateStr}.pdf`;
+          const dateStr   = new Date().toISOString().slice(0, 10);
+          const safeName  = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_');
+          const fileName  = `Receipt_${safeName}_${dateStr}.pdf`;
           const pdfBase64 = pdf.output('datauristring').split(',')[1];
 
-          // Upload to Apps Script first — it is the authoritative duplicate check
-          showStatus('Saving to Drive…', 'info');
-          const result = await uploadToAppsScript(receipt, pdfBase64, fileName);
-
-          if (result.duplicate) {
-            // Server says already recorded — sync locally and stop
-            markPrintedLocal(receipt);
-            showStatus('⏭️ This receipt was already saved to Drive. Not downloading again.', 'info');
-            return;
-          }
-
-          // Safe to save — trigger browser download & mark locally
           pdf.save(fileName);
           markPrintedLocal(receipt);
-          showStatus('✅ Receipt downloaded & saved to Drive!', 'success');
+
+          // Fire & forget to Drive (no-cors, can't read response)
+          uploadToAppsScript(receipt, pdfBase64, fileName);
+
+          showStatus('✅ Receipt downloaded & saving to Drive…', 'success');
+
+          // Clear fields for next entry
+          document.getElementById('event-name').value  = '';
+          document.getElementById('person-name').value = '';
+          document.getElementById('mobile-no').value   = '';
+          document.getElementById('amount-paid').value = '';
+          receiptEvent.textContent  = '-';
+          receiptPerson.textContent = '-';
+          receiptMobile.textContent = '-';
+          receiptAmount.textContent = 'Rs. 0/-';
 
         } catch (err) {
           console.error('Single PDF error:', err);
@@ -752,69 +752,51 @@
         }
       }
 
-      // ─── Download all receipts — skip already printed, one PDF per new entry ──
-
       async function downloadAllPDF() {
         if (allReceiptsData.length === 0) {
           showStatus('No data loaded. Please load Google Sheets data first.', 'error');
           return;
         }
 
-        // Re-sync from server first so we have the freshest printed list
-        showStatus('Syncing with server…', 'info');
-        await syncPrintedFromServer();
-
         const newReceipts = allReceiptsData.filter(r => !isPrinted(r));
         const skipped     = allReceiptsData.length - newReceipts.length;
 
         if (newReceipts.length === 0) {
-          showStatus(`⏭️ All ${allReceiptsData.length} receipt(s) already downloaded. Nothing new to print.`, 'info');
+          showStatus(`⏭️ All ${allReceiptsData.length} receipt(s) already downloaded. Nothing new.`, 'info');
           return;
         }
 
         try {
           downloadPdfBtn.disabled = true;
-          showStatus(`Downloading ${newReceipts.length} new receipt(s)${skipped > 0 ? ` · skipping ${skipped} already printed` : ''}…`, 'info');
+          showStatus(`Downloading ${newReceipts.length} new receipt(s)${skipped > 0 ? ` · ${skipped} skipped` : ''}…`, 'info');
 
           const logo    = await loadLogoBase64();
           const { jsPDF } = window.jspdf;
           const dateStr = new Date().toISOString().slice(0, 10);
 
-          let downloaded = 0;
-          let dupesFound = 0;
-
           for (let i = 0; i < newReceipts.length; i++) {
-            const receipt  = newReceipts[i];
-            const pdf      = new jsPDF('p', 'mm', 'a4');
+            const receipt   = newReceipts[i];
+            const pdf       = new jsPDF('p', 'mm', 'a4');
             buildReceiptPage(pdf, receipt, logo);
 
             const safeName  = receipt.personName.replace(/[^a-zA-Z0-9]/g, '_') || `Receipt_${i + 1}`;
             const fileName  = `Receipt_${String(i + 1).padStart(3, '0')}_${safeName}_${dateStr}.pdf`;
             const pdfBase64 = pdf.output('datauristring').split(',')[1];
 
-            // Upload to server — authoritative duplicate check happens here
-            const result = await uploadToAppsScript(receipt, pdfBase64, fileName);
-
-            if (result.duplicate) {
-              // Server already has it — mark locally and skip download
-              markPrintedLocal(receipt);
-              dupesFound++;
-              continue;
-            }
-
-            // New receipt confirmed — save to browser
             pdf.save(fileName);
             markPrintedLocal(receipt);
-            downloaded++;
+
+            // Fire & forget to Drive
+            uploadToAppsScript(receipt, pdfBase64, fileName);
 
             if (i < newReceipts.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 350));
+              await new Promise(r => setTimeout(r, 350));
             }
           }
 
-          let msg = `✅ Downloaded ${downloaded} new receipt(s) & saved to Drive.`;
-          if (dupesFound > 0) msg += ` ${dupesFound} duplicate(s) caught by server and skipped.`;
-          if (skipped   > 0) msg += ` ${skipped} previously printed also skipped.`;
+          const msg = skipped > 0
+            ? `✅ Downloaded ${newReceipts.length} receipt(s) & saving to Drive. ${skipped} already printed skipped.`
+            : `✅ Downloaded ${newReceipts.length} receipt(s) & saving to Drive!`;
           showStatus(msg, 'success');
 
         } catch (err) {
@@ -829,9 +811,8 @@
 
       // ─── Persist sheet URL — save once, load forever ─────────────────────────
 
-      const STORAGE_KEY    = 'toloba_sheet_url';
-      const SCRIPT_URL_KEY = 'toloba_script_url';
-      const PRINTED_KEY    = 'toloba_printed_receipts';
+      const STORAGE_KEY  = 'toloba_sheet_url';
+      const PRINTED_KEY  = 'toloba_printed_receipts';
       const POLL_INTERVAL  = 30000;
       let   pollTimer      = null;
       let   lastCsvText    = null;
@@ -839,7 +820,7 @@
       // Restore Apps Script URL
       // ─── Apps Script URL (background only — not shown in UI) ────────────────
       // Paste your deployed Web App URL here:
-      const APPS_SCRIPT_URL = localStorage.getItem(SCRIPT_URL_KEY) || '';
+      const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxIQ-UTZUrS0W-GtgoVCjXEACui3sf1tR2FbesFUEovx5wkqiUV1ECsUWSIRjothz9ivg/exec';
 
       // Restore sheet URL — show it locked in the field
       const savedUrl = localStorage.getItem(STORAGE_KEY);
@@ -919,25 +900,32 @@
         return getPrintedSet().has(receiptFingerprint(receipt));
       }
 
-      // ─── Upload PDF to Apps Script (Drive + Sheet), returns {duplicate, driveLink} ──
+      // ─── Upload PDF to Apps Script (Drive + Sheet) ───────────────────────────
+      // Uses no-cors POST so it works from local file:// without CORS errors.
+      // We can't read the response in no-cors mode, so duplicate guard is local-only.
 
       async function uploadToAppsScript(receipt, pdfBase64, fileName) {
         if (!APPS_SCRIPT_URL) return { skipped: true };
         try {
-          const res  = await fetch(APPS_SCRIPT_URL, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              personName: receipt.personName,
-              mobileNo:   receipt.mobileNo,
-              eventName:  receipt.eventName,
-              amountPaid: receipt.amountPaid,
-              date:       receipt.date,
-              pdfBase64,
-              fileName
-            })
+          // Use URLSearchParams + no-cors — works from any origin including file://
+          const params = new URLSearchParams();
+          params.append('personName',  receipt.personName);
+          params.append('mobileNo',    receipt.mobileNo);
+          params.append('eventName',   receipt.eventName);
+          params.append('amountPaid',  receipt.amountPaid);
+          params.append('date',        receipt.date);
+          params.append('fileName',    fileName);
+          params.append('fingerprint', receiptFingerprint(receipt));
+          params.append('pdfBase64',   pdfBase64);
+
+          fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode:   'no-cors',   // bypasses CORS — no response readable, fire & forget
+            body:   params
           });
-          return await res.json();
+
+          // Return success immediately — server will deduplicate via fingerprint
+          return { success: true };
         } catch (err) {
           console.warn('Apps Script upload failed:', err);
           return { error: true };
@@ -1021,7 +1009,15 @@
       // ─── Event listeners ─────────────────────────────────────────────────────
 
       document.getElementById('load-sheet').addEventListener('click', () => loadSheetData());
-      document.getElementById('generate-single').addEventListener('click', () => generateSingleReceipt());
+      document.getElementById('generate-single').addEventListener('click', () => {
+        generateSingleReceipt();
+        // Clear fields for next entry
+        eventNameInput.value  = '';
+        personNameInput.value = '';
+        mobileNoInput.value   = '';
+        amountPaidInput.value = '';
+        eventNameInput.focus();
+      });
       downloadSingleBtn.addEventListener('click', () => downloadSinglePDF());
       downloadPdfBtn.addEventListener('click', () => downloadAllPDF());
 
