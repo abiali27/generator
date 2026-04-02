@@ -196,7 +196,7 @@
       <h2>Manual Entry</h2>
 
       <div class="form-group">
-        <label for="event-name">Contribution For </label>
+        <label for="event-name">Contribution For (Event)</label>
         <input type="text" id="event-name" placeholder="Enter event name" />
       </div>
       <div class="form-group">
@@ -243,8 +243,8 @@
         </div>
 
         <div class="signature">
-          <p><strong>Mohammed Dilawer</strong> (Secretary)</p>
-          <p>_________________________</p>
+          <p style="margin-bottom:2px;"><strong>Mohammed Dilawer</strong> (Secretary)</p>
+          <p style="margin-top:0;line-height:1;">_________________________</p>
           <p>Authorized Signature</p>
         </div>
       </div>
@@ -504,7 +504,7 @@
 
         const sigY = y + 36;
         pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(50,50,50);
-        pdf.text('Mohammed Dilawer (Secretary)', 105, sigY - 4, { align:'center' });
+        pdf.text('Mohammed Dilawer (Secretary)', 105, sigY, { align:'center' });
         pdf.setDrawColor(180,180,180); pdf.setLineWidth(0.5); pdf.line(55, sigY + 2, 155, sigY + 2);
         pdf.setFontSize(10); pdf.setFont('helvetica','italic'); pdf.setTextColor(150,150,150);
         pdf.text('Authorized Signature', 105, sigY + 9, { align:'center' });
@@ -529,21 +529,50 @@
         return getPrintedSet().has(receiptFingerprint(r));
       }
 
-      // ── Upload to Apps Script (no-cors, fire & forget) ───────────────────────
+      // ── Upload to Apps Script via hidden form (bypasses CORS + size limits) ────
       function uploadToAppsScript(receipt, pdfBase64, fileName) {
         if (!APPS_SCRIPT_URL) return;
         try {
-          const params = new URLSearchParams();
-          params.append('personName',  receipt.personName);
-          params.append('itsId',       receipt.itsId);
-          params.append('mobileNo',    receipt.mobileNo);
-          params.append('eventName',   receipt.eventName);
-          params.append('amountPaid',  receipt.amountPaid);
-          params.append('date',        receipt.date);
-          params.append('fileName',    fileName);
-          params.append('fingerprint', receiptFingerprint(receipt));
-          params.append('pdfBase64',   pdfBase64);
-          fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', body: params });
+          // Use a hidden <form> POST — works from file://, no CORS, no size limit
+          const form   = document.createElement('form');
+          form.method  = 'POST';
+          form.action  = APPS_SCRIPT_URL;
+          form.target  = '_hidden_upload';
+          form.style.display = 'none';
+
+          const fields = {
+            personName:  receipt.personName,
+            itsId:       receipt.itsId,
+            mobileNo:    receipt.mobileNo,
+            eventName:   receipt.eventName,
+            amountPaid:  receipt.amountPaid,
+            date:        receipt.date,
+            fileName:    fileName,
+            fingerprint: receiptFingerprint(receipt),
+            pdfBase64:   pdfBase64
+          };
+
+          Object.entries(fields).forEach(([k, v]) => {
+            const input  = document.createElement('input');
+            input.type   = 'hidden';
+            input.name   = k;
+            input.value  = v || '';
+            form.appendChild(input);
+          });
+
+          // Hidden iframe to absorb the response silently
+          let iframe = document.getElementById('_hidden_upload');
+          if (!iframe) {
+            iframe      = document.createElement('iframe');
+            iframe.name = '_hidden_upload';
+            iframe.id   = '_hidden_upload';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+          }
+
+          document.body.appendChild(form);
+          form.submit();
+          setTimeout(() => form.remove(), 3000);
         } catch (err) { console.warn('Upload failed:', err); }
       }
 
