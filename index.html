@@ -243,8 +243,9 @@
         </div>
 
         <div class="signature">
-          <p>Authorized Signature</p>
+          <p><strong>Mohammed Dilawer</strong> (Secretary)</p>
           <p>_________________________</p>
+          <p>Authorized Signature</p>
         </div>
       </div>
     </div>
@@ -501,10 +502,12 @@
           y += 13;
         });
 
-        const sigY = y + 28;
-        pdf.setDrawColor(180,180,180); pdf.setLineWidth(0.5); pdf.line(65, sigY, 145, sigY);
+        const sigY = y + 36;
+        pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(50,50,50);
+        pdf.text('Mohammed Dilawer (Secretary)', 105, sigY - 4, { align:'center' });
+        pdf.setDrawColor(180,180,180); pdf.setLineWidth(0.5); pdf.line(55, sigY + 2, 155, sigY + 2);
         pdf.setFontSize(10); pdf.setFont('helvetica','italic'); pdf.setTextColor(150,150,150);
-        pdf.text('Authorized Signature', 105, sigY+7, { align:'center' });
+        pdf.text('Authorized Signature', 105, sigY + 9, { align:'center' });
       }
 
       // ── Printed-receipt tracker ──────────────────────────────────────────────
