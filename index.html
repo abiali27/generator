@@ -460,29 +460,31 @@
         return getSavedSet().has(receiptFingerprint(r));
       }
 
-      // ── Send receipt to Apps Script → Apps Script builds PDF → saves to Drive ─
+      // ── Send receipt to Apps Script via GET (works from file://, no CORS issues) ─
+      // GET requests with URL params work perfectly — no body stripping, no CORS block
       async function sendToAppsScript(receipt) {
         if (!APPS_SCRIPT_URL) return { skipped: true };
         try {
-          const params = new URLSearchParams();
-          params.append('personName',  receipt.personName);
-          params.append('itsId',       receipt.itsId);
-          params.append('mobileNo',    receipt.mobileNo);
-          params.append('eventName',   receipt.eventName);
-          params.append('amountPaid',  receipt.amountPaid);
-          params.append('date',        receipt.date);
-          params.append('day',         receipt.day);
-          params.append('fingerprint', receiptFingerprint(receipt));
           const safeName = receipt.personName.replace(/[^a-zA-Z0-9]/g,'_');
           const dateStr  = new Date().toISOString().slice(0,10);
-          params.append('fileName', `Receipt_${safeName}_${dateStr}.pdf`);
+          const fileName = `Receipt_${safeName}_${dateStr}.pdf`;
 
-          const res  = await fetch(APPS_SCRIPT_URL, {
-            method:  'POST',
-            mode:    'no-cors',
-            body:    params
+          const params = new URLSearchParams({
+            action:      'save',
+            personName:  receipt.personName,
+            itsId:       receipt.itsId,
+            mobileNo:    receipt.mobileNo,
+            eventName:   receipt.eventName,
+            amountPaid:  receipt.amountPaid,
+            date:        receipt.date,
+            day:         receipt.day,
+            fileName:    fileName,
+            fingerprint: receiptFingerprint(receipt)
           });
-          return { success: true };
+
+          const res  = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
+          const json = await res.json();
+          return json;
         } catch (err) {
           console.warn('Send failed:', err);
           return { error: true };
@@ -525,10 +527,21 @@
           }
 
           showStatus('Saving receipt to Drive…', 'info');
-          await sendToAppsScript(receipt);
-          markSaved(receipt);
+          const result = await sendToAppsScript(receipt);
 
-          showStatus('✅ Receipt saved to Drive!', 'success');
+          if (result.duplicate) {
+            markSaved(receipt);
+            showStatus('⏭️ This receipt is already saved in Drive.', 'info');
+            return;
+          }
+          if (result.error || !result.success) {
+            showStatus('❌ Could not save to Drive. Check Apps Script setup.', 'error');
+            return;
+          }
+
+          markSaved(receipt);
+          const link = result.driveLink ? ` <a href="${result.driveLink}" target="_blank">📄 Open PDF</a>` : '';
+          showStatus('✅ Receipt saved to Drive!' + link, 'success');
           clearForm();
 
         } catch (err) {
@@ -558,19 +571,27 @@
           saveDriveBtn.disabled = true;
           showStatus(`Saving ${newReceipts.length} new receipt(s) to Drive${skipped > 0 ? ` · ${skipped} already saved` : ''}…`, 'info');
 
+          let savedCount = 0;
+          let failCount  = 0;
           for (let i = 0; i < newReceipts.length; i++) {
             const receipt = newReceipts[i];
-            await sendToAppsScript(receipt);
-            markSaved(receipt);
-            showStatus(`Saving ${i+1} of ${newReceipts.length}…`, 'info');
-            if (i < newReceipts.length - 1) await new Promise(r => setTimeout(r, 500));
+            showStatus(`Saving ${i+1} of ${newReceipts.length} to Drive…`, 'info');
+            const result = await sendToAppsScript(receipt);
+            if (result.success || result.duplicate) {
+              markSaved(receipt);
+              savedCount++;
+            } else {
+              failCount++;
+            }
+            if (i < newReceipts.length - 1) await new Promise(r => setTimeout(r, 600));
           }
 
+          const failMsg = failCount > 0 ? ` (${failCount} failed — check Apps Script)` : '';
           showStatus(
             skipped > 0
-              ? `✅ ${newReceipts.length} receipt(s) saved to Drive! ${skipped} already saved were skipped.`
-              : `✅ All ${newReceipts.length} receipt(s) saved to Drive!`,
-            'success'
+              ? `✅ ${savedCount} receipt(s) saved to Drive! ${skipped} already saved skipped.${failMsg}`
+              : `✅ All ${savedCount} receipt(s) saved to Drive!${failMsg}`,
+            failCount > 0 ? 'error' : 'success'
           );
 
         } catch (err) {
