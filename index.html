@@ -217,8 +217,8 @@
       </div>
 
       <button id="generate-single">Generate Single Receipt</button>
-      <button id="download-single-pdf" class="download">Download Single Receipt as PDF</button>
-      <button id="download-pdf" class="download" disabled>Download All Receipts as PDF</button>
+      <button id="download-single-pdf" class="download">☁️ Save This Receipt to Drive</button>
+      <button id="save-to-drive" class="download" disabled>☁️ Save All New Receipts to Drive</button>
     </div>
 
     <!-- Receipt Preview -->
@@ -243,9 +243,8 @@
         </div>
 
         <div class="signature">
-          <p style="margin-bottom:2px;"><strong>Mohammed Dilawer</strong> (Secretary)</p>
-          <p style="margin-top:0;line-height:1;">_________________________</p>
           <p>Authorized Signature</p>
+          <p>_________________________</p>
         </div>
       </div>
     </div>
@@ -283,8 +282,8 @@
       const statusContainer   = document.getElementById('status-container');
       const progressContainer = document.getElementById('progress-container');
       const progressBar       = document.getElementById('progress-bar');
-      const downloadPdfBtn    = document.getElementById('download-pdf');
-      const downloadSingleBtn = document.getElementById('download-single-pdf');
+      const saveDriveBtn      = document.getElementById('save-to-drive');
+      const saveSingleBtn     = document.getElementById('download-single-pdf');
 
       // ── Helpers ──────────────────────────────────────────────────────────────
       function showStatus(msg, type = 'info') {
@@ -383,11 +382,11 @@
         };
         const { date, day } = getCurrentDateStrings();
         return {
-          eventName:  find('contribution','event','for','purpose')              || '-',
-          personName: find('name','person','member')             || '-',
-          itsId:      find('its','itsid','its_id','its id','id') || '-',
-          mobileNo:   find('mobile','phone','contact','number')  || '-',
-          amountPaid: find('amount','paid','fee','rs','rupee')   || '0',
+          eventName:  find('contribution','event','for','purpose') || '-',
+          personName: find('name','person','member')               || '-',
+          itsId:      find('its','itsid','its_id','its id','id')   || '-',
+          mobileNo:   find('mobile','phone','contact','number')    || '-',
+          amountPaid: find('amount','paid','fee','rs','rupee')     || '0',
           date, day
         };
       }
@@ -400,7 +399,7 @@
         clearStatus();
         progressContainer.style.display = 'block';
         progressBar.style.width = '0%';
-        downloadPdfBtn.disabled = true;
+        saveDriveBtn.disabled = true;
 
         try {
           showStatus('Fetching data from Google Sheets…', 'info');
@@ -422,15 +421,15 @@
           allReceiptsData = dataRows.map(mapRowToReceipt);
 
           updateProgress(100);
-          const unprinted    = allReceiptsData.filter(r => !isPrinted(r)).length;
-          const printedCount = allReceiptsData.length - unprinted;
+          const unprinted    = allReceiptsData.filter(r => !isSaved(r)).length;
+          const savedCount   = allReceiptsData.length - unprinted;
           showStatus(
-            printedCount > 0
-              ? `✅ Loaded ${allReceiptsData.length} receipt(s) — ${unprinted} new, ${printedCount} already printed.`
-              : `✅ Loaded ${allReceiptsData.length} receipt(s). Ready to download.`,
+            savedCount > 0
+              ? `✅ Loaded ${allReceiptsData.length} receipt(s) — ${unprinted} new, ${savedCount} already saved to Drive.`
+              : `✅ Loaded ${allReceiptsData.length} receipt(s). Ready to save to Drive.`,
             'success'
           );
-          downloadPdfBtn.disabled = false;
+          saveDriveBtn.disabled = false;
           if (allReceiptsData.length > 0) generateSingleReceipt(allReceiptsData[0]);
 
         } catch (err) {
@@ -438,163 +437,77 @@
           showStatus(`❌ Error: ${err.message}`, 'error');
           progressContainer.style.display = 'none';
           progressBar.style.width = '0%';
-          downloadPdfBtn.disabled = true;
+          saveDriveBtn.disabled = true;
         }
       }
 
-      // ── Logo loader ──────────────────────────────────────────────────────────
-      let logoBase64 = null;
-      let logoMime   = 'PNG';
-
-      async function loadLogoBase64() {
-        if (logoBase64) return logoBase64;
-        try {
-          const res = await fetch('logo.png');
-          if (!res.ok) return null;
-          const blob = await res.blob();
-          return new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const dataUrl = reader.result;
-              logoBase64    = dataUrl.split(',')[1];
-              const m       = dataUrl.match(/data:image\/(\w+);/);
-              if (m) logoMime = m[1].toUpperCase();
-              resolve(logoBase64);
-            };
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(blob);
-          });
-        } catch { return null; }
-      }
-
-      // ── PDF builder ──────────────────────────────────────────────────────────
-      function buildReceiptPage(pdf, receipt, logoB64) {
-        if (logoB64) { try { pdf.addImage(logoB64, logoMime, 18, 13, 22, 22); } catch {} }
-
-        pdf.setFontSize(15); pdf.setFont('helvetica','bold'); pdf.setTextColor(46,125,50);
-        pdf.text('Toloba ul kulliyaat il mumenoon', 105, 20, { align:'center' });
-        pdf.setFontSize(11); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
-        pdf.text('Fakhri Mohalla Poona', 105, 27, { align:'center' });
-        pdf.setFontSize(10); pdf.setFont('helvetica','italic'); pdf.setTextColor(120,120,120);
-        pdf.text('Official Receipt', 105, 33, { align:'center' });
-
-        pdf.setDrawColor(76,175,80); pdf.setLineWidth(0.8);
-        pdf.line(20, 39, 190, 39);
-
-        const details = [
-          ['Contribution For:',  receipt.eventName],
-          ['Person Name:',  receipt.personName],
-          ['ITS ID:',       receipt.itsId],
-          ['Mobile No:',    receipt.mobileNo],
-          ['Amount Paid:',  `Rs. ${receipt.amountPaid}/-`],
-          ['Date:',         receipt.date],
-          ['Day:',          receipt.day],
-        ];
-
-        let y = 54;
-        details.forEach(([label, value]) => {
-          pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(46,125,50);
-          pdf.text(label, 30, y);
-          pdf.setFont('helvetica','normal'); pdf.setTextColor(50,50,50);
-          pdf.text(String(value || '-'), 80, y);
-          pdf.setDrawColor(210,210,210); pdf.setLineWidth(0.25);
-          pdf.setLineDashPattern([1,2],0); pdf.line(30, y+3, 180, y+3); pdf.setLineDashPattern([],0);
-          y += 13;
-        });
-
-        const sigY = y + 36;
-        pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(50,50,50);
-        pdf.text('Mohammed Dilawer (Secretary)', 105, sigY, { align:'center' });
-        pdf.setDrawColor(180,180,180); pdf.setLineWidth(0.5); pdf.line(55, sigY + 2, 155, sigY + 2);
-        pdf.setFontSize(10); pdf.setFont('helvetica','italic'); pdf.setTextColor(150,150,150);
-        pdf.text('Authorized Signature', 105, sigY + 9, { align:'center' });
-      }
-
-      // ── Printed-receipt tracker ──────────────────────────────────────────────
-      function getPrintedSet() {
+      // ── Saved-receipt tracker (localStorage) ─────────────────────────────────
+      function getSavedSet() {
         try { return new Set(JSON.parse(localStorage.getItem(PRINTED_KEY) || '[]')); }
         catch { return new Set(); }
       }
-      function savePrintedSet(set) {
+      function saveSavedSet(set) {
         localStorage.setItem(PRINTED_KEY, JSON.stringify([...set]));
       }
       function receiptFingerprint(r) {
         return [r.personName, r.itsId, r.mobileNo, r.amountPaid, r.eventName]
           .join('|').toLowerCase().trim();
       }
-      function markPrintedLocal(r) {
-        const s = getPrintedSet(); s.add(receiptFingerprint(r)); savePrintedSet(s);
+      function markSaved(r) {
+        const s = getSavedSet(); s.add(receiptFingerprint(r)); saveSavedSet(s);
       }
-      function isPrinted(r) {
-        return getPrintedSet().has(receiptFingerprint(r));
+      function isSaved(r) {
+        return getSavedSet().has(receiptFingerprint(r));
       }
 
-      // ── Upload to Apps Script via hidden form (bypasses CORS + size limits) ────
-      function uploadToAppsScript(receipt, pdfBase64, fileName) {
-        if (!APPS_SCRIPT_URL) return;
+      // ── Send receipt to Apps Script → Apps Script builds PDF → saves to Drive ─
+      async function sendToAppsScript(receipt) {
+        if (!APPS_SCRIPT_URL) return { skipped: true };
         try {
-          // Use a hidden <form> POST — works from file://, no CORS, no size limit
-          const form   = document.createElement('form');
-          form.method  = 'POST';
-          form.action  = APPS_SCRIPT_URL;
-          form.target  = '_hidden_upload';
-          form.style.display = 'none';
+          const params = new URLSearchParams();
+          params.append('personName',  receipt.personName);
+          params.append('itsId',       receipt.itsId);
+          params.append('mobileNo',    receipt.mobileNo);
+          params.append('eventName',   receipt.eventName);
+          params.append('amountPaid',  receipt.amountPaid);
+          params.append('date',        receipt.date);
+          params.append('day',         receipt.day);
+          params.append('fingerprint', receiptFingerprint(receipt));
+          const safeName = receipt.personName.replace(/[^a-zA-Z0-9]/g,'_');
+          const dateStr  = new Date().toISOString().slice(0,10);
+          params.append('fileName', `Receipt_${safeName}_${dateStr}.pdf`);
 
-          const fields = {
-            personName:  receipt.personName,
-            itsId:       receipt.itsId,
-            mobileNo:    receipt.mobileNo,
-            eventName:   receipt.eventName,
-            amountPaid:  receipt.amountPaid,
-            date:        receipt.date,
-            fileName:    fileName,
-            fingerprint: receiptFingerprint(receipt),
-            pdfBase64:   pdfBase64
-          };
-
-          Object.entries(fields).forEach(([k, v]) => {
-            const input  = document.createElement('input');
-            input.type   = 'hidden';
-            input.name   = k;
-            input.value  = v || '';
-            form.appendChild(input);
+          const res  = await fetch(APPS_SCRIPT_URL, {
+            method:  'POST',
+            mode:    'no-cors',
+            body:    params
           });
-
-          // Hidden iframe to absorb the response silently
-          let iframe = document.getElementById('_hidden_upload');
-          if (!iframe) {
-            iframe      = document.createElement('iframe');
-            iframe.name = '_hidden_upload';
-            iframe.id   = '_hidden_upload';
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-          }
-
-          document.body.appendChild(form);
-          form.submit();
-          setTimeout(() => form.remove(), 3000);
-        } catch (err) { console.warn('Upload failed:', err); }
+          return { success: true };
+        } catch (err) {
+          console.warn('Send failed:', err);
+          return { error: true };
+        }
       }
 
-      // ── Sync printed fingerprints from server ────────────────────────────────
-      async function syncPrintedFromServer() {
+      // ── Sync saved fingerprints from server ───────────────────────────────────
+      async function syncFromServer() {
         if (!APPS_SCRIPT_URL) return;
         try {
           const res  = await fetch(`${APPS_SCRIPT_URL}?action=list`);
           if (!res.ok) return;
           const json = await res.json();
           if (Array.isArray(json.fingerprints) && json.fingerprints.length > 0) {
-            const local = getPrintedSet();
+            const local = getSavedSet();
             json.fingerprints.forEach(fp => local.add(fp));
-            savePrintedSet(local);
+            saveSavedSet(local);
           }
         } catch { /* silent */ }
       }
 
-      // ── Download single PDF ──────────────────────────────────────────────────
-      async function downloadSinglePDF() {
+      // ── Save single receipt to Drive ──────────────────────────────────────────
+      async function saveSingleToDrive() {
         try {
-          downloadSingleBtn.disabled = true;
+          saveSingleBtn.disabled = true;
 
           const receipt = {
             eventName:  receiptEvent.textContent  || '-',
@@ -606,92 +519,69 @@
             day:        receiptDay.textContent    || '-',
           };
 
-          if (isPrinted(receipt)) {
-            showStatus('⏭️ This receipt was already downloaded.', 'info');
+          if (isSaved(receipt)) {
+            showStatus('⏭️ This receipt is already saved to Drive.', 'info');
             return;
           }
 
-          showStatus('Generating PDF…', 'info');
-          const logo      = await loadLogoBase64();
-          const { jsPDF } = window.jspdf;
-          const pdf       = new jsPDF('p','mm','a4');
-          buildReceiptPage(pdf, receipt, logo);
+          showStatus('Saving receipt to Drive…', 'info');
+          await sendToAppsScript(receipt);
+          markSaved(receipt);
 
-          const dateStr   = new Date().toISOString().slice(0,10);
-          const safeName  = receipt.personName.replace(/[^a-zA-Z0-9]/g,'_');
-          const fileName  = `Receipt_${safeName}_${dateStr}.pdf`;
-          const pdfBase64 = pdf.output('datauristring').split(',')[1];
-
-          pdf.save(fileName);
-          markPrintedLocal(receipt);
-          uploadToAppsScript(receipt, pdfBase64, fileName);
-
-          showStatus('✅ Receipt downloaded & saving to Drive…', 'success');
+          showStatus('✅ Receipt saved to Drive!', 'success');
           clearForm();
 
         } catch (err) {
-          console.error('Single PDF error:', err);
-          showStatus('❌ Error generating PDF. Please try again.', 'error');
+          console.error('Save error:', err);
+          showStatus('❌ Error saving receipt. Please try again.', 'error');
         } finally {
-          downloadSingleBtn.disabled = false;
+          saveSingleBtn.disabled = false;
         }
       }
 
-      // ── Download all PDFs ────────────────────────────────────────────────────
-      async function downloadAllPDF() {
+      // ── Save all new receipts to Drive ────────────────────────────────────────
+      async function saveAllToDrive() {
         if (allReceiptsData.length === 0) {
           showStatus('No data loaded. Please load Google Sheets data first.', 'error');
           return;
         }
 
-        const newReceipts = allReceiptsData.filter(r => !isPrinted(r));
+        const newReceipts = allReceiptsData.filter(r => !isSaved(r));
         const skipped     = allReceiptsData.length - newReceipts.length;
 
         if (newReceipts.length === 0) {
-          showStatus(`⏭️ All ${allReceiptsData.length} receipt(s) already downloaded. Nothing new.`, 'info');
+          showStatus(`⏭️ All ${allReceiptsData.length} receipt(s) already saved to Drive. Nothing new.`, 'info');
           return;
         }
 
         try {
-          downloadPdfBtn.disabled = true;
-          showStatus(`Downloading ${newReceipts.length} new receipt(s)${skipped > 0 ? ` · ${skipped} skipped` : ''}…`, 'info');
-
-          const logo      = await loadLogoBase64();
-          const { jsPDF } = window.jspdf;
-          const dateStr   = new Date().toISOString().slice(0,10);
+          saveDriveBtn.disabled = true;
+          showStatus(`Saving ${newReceipts.length} new receipt(s) to Drive${skipped > 0 ? ` · ${skipped} already saved` : ''}…`, 'info');
 
           for (let i = 0; i < newReceipts.length; i++) {
-            const receipt   = newReceipts[i];
-            const pdf       = new jsPDF('p','mm','a4');
-            buildReceiptPage(pdf, receipt, logo);
-
-            const safeName  = receipt.personName.replace(/[^a-zA-Z0-9]/g,'_') || `Receipt_${i+1}`;
-            const fileName  = `Receipt_${String(i+1).padStart(3,'0')}_${safeName}_${dateStr}.pdf`;
-            const pdfBase64 = pdf.output('datauristring').split(',')[1];
-
-            pdf.save(fileName);
-            markPrintedLocal(receipt);
-            uploadToAppsScript(receipt, pdfBase64, fileName);
-
-            if (i < newReceipts.length - 1) await new Promise(r => setTimeout(r, 350));
+            const receipt = newReceipts[i];
+            await sendToAppsScript(receipt);
+            markSaved(receipt);
+            showStatus(`Saving ${i+1} of ${newReceipts.length}…`, 'info');
+            if (i < newReceipts.length - 1) await new Promise(r => setTimeout(r, 500));
           }
 
           showStatus(
             skipped > 0
-              ? `✅ Downloaded ${newReceipts.length} receipt(s) & saving to Drive. ${skipped} already printed skipped.`
-              : `✅ Downloaded ${newReceipts.length} receipt(s) & saving to Drive!`,
+              ? `✅ ${newReceipts.length} receipt(s) saved to Drive! ${skipped} already saved were skipped.`
+              : `✅ All ${newReceipts.length} receipt(s) saved to Drive!`,
             'success'
           );
 
         } catch (err) {
-          console.error('Bulk PDF error:', err);
-          showStatus('❌ Error generating PDFs. Please try again.', 'error');
+          console.error('Save all error:', err);
+          showStatus('❌ Error saving receipts. Please try again.', 'error');
         } finally {
-          downloadPdfBtn.disabled = false;
+          saveDriveBtn.disabled = false;
         }
       }
 
-      // ── Sheet URL persistence ────────────────────────────────────────────────
+      // ── Sheet URL persistence ─────────────────────────────────────────────────
       const savedUrl = localStorage.getItem(STORAGE_KEY);
       if (savedUrl) {
         sheetUrlInput.value             = savedUrl;
@@ -732,12 +622,12 @@
         document.getElementById('sheet-url-hint').textContent = 'Paste once — saved permanently. Data auto-fetches on every page load.';
         stopPolling();
         allReceiptsData = [];
-        downloadPdfBtn.disabled = true;
+        saveDriveBtn.disabled = true;
         clearStatus();
         sheetUrlInput.focus();
       });
 
-      // ── Background polling ───────────────────────────────────────────────────
+      // ── Background polling for new sheet entries ──────────────────────────────
       async function silentRefresh() {
         const url = sheetUrlInput.value.trim();
         if (!url || !url.includes('docs.google.com/spreadsheets')) return;
@@ -756,15 +646,15 @@
           allReceiptsData = dataRows.map(mapRowToReceipt);
           const newCount  = allReceiptsData.length;
           const added     = newCount - prevCount;
-          const unprinted = allReceiptsData.filter(r => !isPrinted(r)).length;
+          const unprinted = allReceiptsData.filter(r => !isSaved(r)).length;
 
-          downloadPdfBtn.disabled = false;
+          saveDriveBtn.disabled = false;
           generateSingleReceipt(allReceiptsData[allReceiptsData.length - 1]);
 
           showStatus(
             added > 0
-              ? `🔄 ${added} new entr${added > 1 ? 'ies' : 'y'} detected! Total: ${newCount} — ${unprinted} not yet printed.`
-              : `🔄 Sheet updated — ${newCount} receipt(s), ${unprinted} not yet printed.`,
+              ? `🔄 ${added} new entr${added > 1 ? 'ies' : 'y'} detected! Total: ${newCount} — ${unprinted} not yet saved to Drive.`
+              : `🔄 Sheet updated — ${newCount} receipt(s), ${unprinted} not yet saved to Drive.`,
             'success'
           );
 
@@ -778,12 +668,11 @@
       function startPolling() { stopPolling(); pollTimer = setInterval(silentRefresh, POLL_INTERVAL); }
       function stopPolling()  { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
 
-      // ── Event listeners ──────────────────────────────────────────────────────
+      // ── Event listeners ───────────────────────────────────────────────────────
       document.getElementById('load-sheet').addEventListener('click', () => loadSheetData());
 
       document.getElementById('generate-single').addEventListener('click', () => {
-        generateSingleReceipt(); // fill preview from inputs
-        // Clear only the input fields — leave the receipt preview visible
+        generateSingleReceipt();
         eventNameInput.value  = '';
         personNameInput.value = '';
         itsIdInput.value      = '';
@@ -792,13 +681,13 @@
         eventNameInput.focus();
       });
 
-      downloadSingleBtn.addEventListener('click', () => downloadSinglePDF());
-      downloadPdfBtn.addEventListener('click',    () => downloadAllPDF());
+      saveSingleBtn.addEventListener('click', () => saveSingleToDrive());
+      saveDriveBtn.addEventListener('click',  () => saveAllToDrive());
 
-      // ── Startup ──────────────────────────────────────────────────────────────
+      // ── Startup ───────────────────────────────────────────────────────────────
       async function startup() {
         updateDateDisplay();
-        await syncPrintedFromServer();
+        await syncFromServer();
         const url = sheetUrlInput.value.trim();
         if (url && url.includes('docs.google.com/spreadsheets')) {
           await loadSheetData();
@@ -806,6 +695,7 @@
         }
       }
 
+      startup();
       startup();
     });
   </script>
