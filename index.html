@@ -528,6 +528,7 @@
 
           showStatus('Saving receipt to Drive…', 'info');
           const result = await sendToAppsScript(receipt);
+          console.log('Apps Script response:', JSON.stringify(result));
 
           if (result.duplicate) {
             markSaved(receipt);
@@ -535,7 +536,8 @@
             return;
           }
           if (result.error || !result.success) {
-            showStatus('❌ Could not save to Drive. Check Apps Script setup.', 'error');
+            const errMsg = result.error || result.message || 'Unknown error';
+            showStatus('❌ Drive save failed: ' + errMsg, 'error');
             return;
           }
 
@@ -586,7 +588,7 @@
             if (i < newReceipts.length - 1) await new Promise(r => setTimeout(r, 600));
           }
 
-          const failMsg = failCount > 0 ? ` (${failCount} failed — check Apps Script)` : '';
+          const failMsg = failCount > 0 ? ` (${failCount} failed — open browser console for details)` : '';
           showStatus(
             skipped > 0
               ? `✅ ${savedCount} receipt(s) saved to Drive! ${skipped} already saved skipped.${failMsg}`
