@@ -482,12 +482,27 @@
             fingerprint: receiptFingerprint(receipt)
           });
 
-          const res  = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
-          const json = await res.json();
-          return json;
+          const res = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`, {
+            redirect: 'follow'   // follow Apps Script redirects
+          });
+
+          // Apps Script always returns 200 with JSON text
+          const text = await res.text();
+          console.log('Raw Apps Script response:', text);
+
+          // Parse JSON safely
+          try {
+            return JSON.parse(text);
+          } catch {
+            // If we got HTML (login page) instead of JSON
+            if (text.includes('accounts.google.com') || text.includes('signin')) {
+              return { success: false, error: 'Apps Script requires login — set "Who has access" to "Anyone" in deployment settings.' };
+            }
+            return { success: false, error: 'Unexpected response: ' + text.substring(0, 100) };
+          }
         } catch (err) {
-          console.warn('Send failed:', err);
-          return { error: true };
+          console.warn('Send failed:', err.message);
+          return { success: false, error: err.message };
         }
       }
 
@@ -535,9 +550,10 @@
             showStatus('⏭️ This receipt is already saved in Drive.', 'info');
             return;
           }
-          if (result.error || !result.success) {
-            const errMsg = result.error || result.message || 'Unknown error';
-            showStatus('❌ Drive save failed: ' + errMsg, 'error');
+          if (!result.success && !result.duplicate) {
+            const errMsg = (typeof result.error === 'string' ? result.error : null)
+                        || result.message || 'Unknown error — check browser console (F12)';
+            showStatus('❌ ' + errMsg, 'error');
             return;
           }
 
