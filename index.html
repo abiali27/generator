@@ -4,578 +4,810 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Toloba Kuliatul Mumenoon Receipt Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-    body { background: #f5f7fa; color: #333; line-height: 1.6; padding: 20px; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
+    body {
+      background-color: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
 
-    .container { max-width: 1200px; width: 100%; background: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-wrap: wrap; gap: 30px; padding: 30px; }
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      padding: 30px;
+    }
 
-    header { width: 100%; background: linear-gradient(135deg, #4caf50, #2e7d32); color: white; text-align: center; padding: 28px 20px; border-radius: 12px 12px 0 0; font-weight: 600; font-size: 1.7rem; letter-spacing: 1px; user-select: none; margin: -30px -30px 0 -30px; }
+    header {
+      width: 100%;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      text-align: center;
+      padding: 30px 20px;
+      border-radius: 12px 12px 0 0;
+      font-weight: 600;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
+      user-select: none;
+      margin: -30px -30px 0 -30px;
+    }
 
-    .form-section { flex: 1 1 350px; display: flex; flex-direction: column; gap: 16px; }
-    .form-section h2 { color: #2e7d32; font-weight: 700; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 7px; margin-top: 4px; }
+    .form-section {
+      flex: 1 1 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
 
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    label { font-weight: 600; color: #555; font-size: 0.93rem; }
+    .form-section h2 {
+      color: #2e7d32;
+      font-weight: 700;
+      font-size: 1.6rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 8px;
+    }
 
-    input { padding: 11px 13px; font-size: 0.95rem; border: 2px solid #ddd; border-radius: 8px; transition: border-color 0.2s; font-family: inherit; width: 100%; }
-    input:focus { outline: none; border-color: #4caf50; box-shadow: 0 0 5px rgba(76,175,80,0.3); }
-    input[readonly] { background: #f0f9f0; border-color: #4caf50; color: #2e7d32; font-weight: 600; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
 
-    button { background: #4caf50; color: white; border: none; padding: 12px 0; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 700; transition: background 0.2s; width: 100%; margin-top: 6px; user-select: none; }
+    label { font-weight: 600; color: #555; font-size: 1rem; }
+
+    input, textarea {
+      padding: 12px 14px;
+      font-size: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      transition: border-color 0.3s ease;
+      font-family: inherit;
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #4caf50;
+      box-shadow: 0 0 6px rgba(76,175,80,0.4);
+      background-color: #fff;
+    }
+
+    button {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 14px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+      width: 100%;
+      margin-top: 10px;
+      user-select: none;
+    }
+
     button:hover:not(:disabled) { background: #2e7d32; }
     button:disabled { background: #ccc; cursor: not-allowed; }
-    button.btn-dl  { background: #ff5722; }
-    button.btn-dl:hover:not(:disabled)  { background: #e64a19; }
-    button.btn-drv { background: #1565c0; }
-    button.btn-drv:hover:not(:disabled) { background: #0d47a1; }
+    button.download { background: #ff5722; margin-top: 10px; }
+    button.download:hover:not(:disabled) { background: #e64a19; }
 
-    .status { padding: 9px 12px; border-radius: 8px; margin: 6px 0; font-weight: 600; text-align: center; font-size: 0.9rem; }
+    .status { padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: 600; text-align: center; }
     .status.success { background: #e8f5e8; color: #2e7d32; border: 1px solid #4caf50; }
     .status.error   { background: #ffebee; color: #c62828; border: 1px solid #f44336; }
     .status.info    { background: #e3f2fd; color: #1565c0; border: 1px solid #2196f3; }
 
-    .progress { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin: 4px 0; }
-    .progress-bar { height: 100%; background: linear-gradient(90deg,#4caf50,#2e7d32); width: 0%; transition: width 0.3s; }
+    .progress { width: 100%; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, #4caf50, #2e7d32); width: 0%; transition: width 0.3s ease; }
 
-    .setup-box { background: #fff8e1; border: 1px solid #ffc107; border-radius: 10px; padding: 13px 15px; font-size: 0.87rem; }
-    .setup-box b { color: #e65100; }
-    .script-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
-    .script-row input { flex: 1; font-size: 0.85rem; padding: 9px 10px; }
-    .script-row button { width: auto; padding: 9px 14px; margin: 0; font-size: 0.85rem; }
-    #script-msg { margin-top: 5px; font-size: 0.83rem; font-weight: 600; }
-    #script-msg.ok  { color: #2e7d32; }
-    #script-msg.bad { color: #c62828; }
+    .receipt-section {
+      flex: 1 1 450px;
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 30px 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
 
-    .receipt-section { flex: 1 1 450px; background: #f9f9f9; border-radius: 12px; padding: 28px 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px; }
-    .receipt-header { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #4caf50; padding-bottom: 14px; justify-content: center; }
-    .receipt-logo { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; border: 1.5px solid #4caf50; background: white; padding: 4px; box-shadow: 0 2px 6px rgba(76,175,80,0.3); }
-    .receipt-header h3 { font-size: 1.15rem; color: #2e7d32; font-weight: 700; }
-    .receipt-header p  { color: #555; font-size: 0.9rem; margin-top: 2px; }
-    .receipt-details { display: flex; flex-direction: column; gap: 11px; font-size: 1.03rem; color: #444; }
-    .receipt-item { display: flex; justify-content: center; gap: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 7px; }
+    .receipt-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      border-bottom: 2px solid #4caf50;
+      padding-bottom: 15px;
+      justify-content: center;
+    }
+
+    .receipt-logo {
+      width: 70px; height: 70px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1.5px solid #4caf50;
+      background: white;
+      padding: 5px;
+      box-shadow: 0 2px 6px rgba(76,175,80,0.3);
+    }
+
+    .receipt-header h3 { font-size: 1.3rem; color: #2e7d32; font-weight: 700; user-select: none; }
+    .receipt-header p  { color: #555; font-size: 1rem; margin-top: 4px; user-select: none; }
+
+    .receipt-details { display: flex; flex-direction: column; gap: 14px; font-size: 1.1rem; color: #444; text-align: center; }
+
+    .receipt-item {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 8px;
+      user-select: none;
+    }
     .receipt-item:last-child { border-bottom: none; }
-    .item-label { font-weight: 600; color: #2e7d32; min-width: 148px; text-align: right; }
-    .signature { margin-top: 28px; text-align: center; padding-top: 16px; border-top: 1px solid #ddd; color: #666; }
+
+    .item-label { font-weight: 600; color: #2e7d32; min-width: 130px; text-align: right; }
+
+    .signature { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #ddd; font-style: italic; color: #666; user-select: none; }
 
     @media (max-width: 768px) {
-      .container { flex-direction: column; padding: 16px; }
-      .form-section, .receipt-section { flex: 1 1 100%; }
+      .container { flex-direction: column; padding: 20px; }
+      .form-section, .receipt-section { flex: 1 1 100%; max-width: 100%; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-<div class="container">
-  <header>Toloba ul kulliyaat il mumenoon — Receipt Generator</header>
+  <div class="container">
+    <header>Toloba ul kulliyaat il mumenoon — Receipt Generator</header>
 
-  <div class="form-section">
+    <div class="form-section">
+      <h2>Google Sheets Integration</h2>
 
-    <!-- ── Apps Script Setup ── -->
-    <div class="setup-box">
-      <b>⚙️ Apps Script URL</b> — paste once, saved permanently
-      <div class="script-row">
-        <input type="text" id="script-url" placeholder="Paste your Apps Script Web App URL here…" />
-        <button id="btn-test-script" style="background:#1565c0;">Test</button>
-        <button id="btn-clear-script" style="background:#e53935;">✕</button>
+      <div class="form-group">
+        <label for="sheet-url">Google Sheets Source <span style="color:#4caf50;font-size:0.85rem;">✔ Saved</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="sheet-url" placeholder="Paste your Google Sheets link once…" style="flex:1;" />
+          <button id="clear-sheet-url" title="Clear" style="width:auto;padding:12px 14px;margin:0;background:#e53935;font-size:0.9rem;">✕</button>
+        </div>
+        <small id="sheet-url-hint" style="color:#888;font-size:0.82rem;margin-top:3px;">
+          Paste once — saved permanently. Data auto-fetches on every page load.
+        </small>
       </div>
-      <div id="script-msg"></div>
+
+      <button id="load-sheet">Load Sheet Data</button>
+
+      <div id="status-container"></div>
+      <div class="progress" id="progress-container" style="display:none;">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <h2>Manual Entry</h2>
+
+      <div class="form-group">
+        <label for="event-name">Contribution For (Event)</label>
+        <input type="text" id="event-name" placeholder="Enter event name" />
+      </div>
+      <div class="form-group">
+        <label for="person-name">Person Name</label>
+        <input type="text" id="person-name" placeholder="Enter person name" />
+      </div>
+      <div class="form-group">
+        <label for="its-id">ITS ID</label>
+        <input type="text" id="its-id" placeholder="Enter ITS ID" />
+      </div>
+      <div class="form-group">
+        <label for="mobile-no">Mobile Number</label>
+        <input type="text" id="mobile-no" placeholder="Enter mobile number" />
+      </div>
+      <div class="form-group">
+        <label for="amount-paid">Amount Paid (Rs.)</label>
+        <input type="number" id="amount-paid" placeholder="Enter amount" />
+      </div>
+
+      <button id="generate-single">Generate Single Receipt</button>
+      <button id="download-single-pdf" class="download">Download Single Receipt as PDF</button>
+      <button id="download-pdf" class="download" disabled>Download All Receipts as PDF</button>
     </div>
 
-    <!-- ── Sheet Source ── -->
-    <h2>Google Sheets Data</h2>
-    <div class="form-group">
-      <label for="sheet-url">Source Sheet <span style="color:#4caf50;font-size:0.8rem;">✔ Saved</span></label>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input type="text" id="sheet-url" placeholder="Paste Google Sheets link once…" style="flex:1;" />
-        <button id="btn-clear-sheet" style="width:auto;padding:11px 12px;margin:0;background:#e53935;font-size:0.85rem;">✕</button>
-      </div>
-      <small id="sheet-hint" style="color:#888;font-size:0.79rem;margin-top:2px;">Paste once — saved permanently. Auto-loads on every open.</small>
-    </div>
-    <button id="btn-load">Load Sheet Data</button>
-    <div id="status-box"></div>
-    <div class="progress" id="prog" style="display:none;"><div class="progress-bar" id="prog-bar"></div></div>
+    <!-- Receipt Preview -->
+    <div class="receipt-section">
+      <div class="receipt" id="receipt">
+        <div class="receipt-header">
+          <img src="logo.png" alt="Logo" class="receipt-logo" onerror="this.style.display='none'" />
+          <div>
+            <h3>Toloba ul kulliyaat il mumenoon<br>Fakhri Mohalla Poona</h3>
+            <p>Official Receipt</p>
+          </div>
+        </div>
 
-    <!-- ── Manual Entry ── -->
-    <h2>Manual Entry</h2>
-    <div class="form-group"><label>Contribution For (Event)</label><input id="f-event"  placeholder="Enter event name" /></div>
-    <div class="form-group"><label>Person Name</label>              <input id="f-name"   placeholder="Enter person name" /></div>
-    <div class="form-group"><label>ITS ID</label>                   <input id="f-its"    placeholder="Enter ITS ID" /></div>
-    <div class="form-group"><label>Mobile Number</label>            <input id="f-mob"    placeholder="Enter mobile number" /></div>
-    <div class="form-group"><label>Amount Paid (Rs.)</label>        <input id="f-amt"    placeholder="Enter amount" type="number" /></div>
+        <div class="receipt-details">
+          <div class="receipt-item"><span class="item-label">Contribution For:</span><span id="receipt-event">-</span></div>
+          <div class="receipt-item"><span class="item-label">Person Name:</span><span id="receipt-person">-</span></div>
+          <div class="receipt-item"><span class="item-label">ITS ID:</span><span id="receipt-itsid">-</span></div>
+          <div class="receipt-item"><span class="item-label">Mobile No:</span><span id="receipt-mobile">-</span></div>
+          <div class="receipt-item"><span class="item-label">Amount Paid:</span><span id="receipt-amount">Rs. 0/-</span></div>
+          <div class="receipt-item"><span class="item-label">Date:</span><span id="receipt-date">-</span></div>
+          <div class="receipt-item"><span class="item-label">Day:</span><span id="receipt-day">-</span></div>
+        </div>
 
-    <button id="btn-gen">Generate Receipt Preview</button>
-    <button id="btn-dl-one"  class="btn-dl">⬇ Download This Receipt as PDF</button>
-    <button id="btn-dl-all"  class="btn-dl" disabled>⬇ Download All New Receipts</button>
-    <button id="btn-drv-one" class="btn-drv">☁️ Save This Receipt to Drive</button>
-    <button id="btn-drv-all" class="btn-drv" disabled>☁️ Save All New Receipts to Drive</button>
-
-  </div>
-
-  <!-- ── Receipt Preview ── -->
-  <div class="receipt-section">
-    <div id="receipt">
-      <div class="receipt-header">
-        <img src="logo.png" alt="Logo" class="receipt-logo" onerror="this.style.display='none'" />
-        <div>
-          <h3>Toloba ul kulliyaat il mumenoon<br>Fakhri Mohalla Poona</h3>
-          <p>Official Receipt</p>
+        <div class="signature">
+          <p style="margin-bottom:2px;"><strong>Mohammed Dilawer</strong> (Secretary)</p>
+          <p style="margin-top:0;line-height:1;">_________________________</p>
+          <p>Authorized Signature</p>
         </div>
       </div>
-      <div class="receipt-details">
-        <div class="receipt-item"><span class="item-label">Contribution For:</span><span id="r-evt">-</span></div>
-        <div class="receipt-item"><span class="item-label">Person Name:</span>     <span id="r-nam">-</span></div>
-        <div class="receipt-item"><span class="item-label">ITS ID:</span>           <span id="r-its">-</span></div>
-        <div class="receipt-item"><span class="item-label">Mobile No:</span>        <span id="r-mob">-</span></div>
-        <div class="receipt-item"><span class="item-label">Amount Paid:</span>      <span id="r-amt">Rs. 0/-</span></div>
-        <div class="receipt-item"><span class="item-label">Date:</span>             <span id="r-date">-</span></div>
-        <div class="receipt-item"><span class="item-label">Day:</span>              <span id="r-day">-</span></div>
-      </div>
-      <div class="signature">
-        <p style="font-weight:bold;color:#333;margin-bottom:4px;">Mohammed Dilawer (Secretary)</p>
-        <p style="letter-spacing:2px;margin-bottom:3px;">_________________________</p>
-        <p style="font-style:italic;color:#aaa;font-size:0.87rem;">Authorized Signature</p>
-      </div>
     </div>
   </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  let allData   = [];
-  let lastCsv   = null;
-  let pollTimer = null;
-  let autoTimer = null;
-  let logoB64   = null;
-  let logoMime  = 'PNG';
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let allReceiptsData = [];
 
-  const KEY_SHEET  = 'toloba_sheet_url';
-  const KEY_SCRIPT = 'toloba_script_url';
-  const KEY_FP     = 'toloba_fingerprints';
-  const POLL_MS    = 30000;
+      // ── Config ───────────────────────────────────────────────────────────────
+      const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxIQ-UTZUrS0W-GtgoVCjXEACui3sf1tR2FbesFUEovx5wkqiUV1ECsUWSIRjothz9ivg/exec';
+      const STORAGE_KEY     = 'toloba_sheet_url';
+      const PRINTED_KEY     = 'toloba_printed_receipts';
+      const POLL_INTERVAL   = 30000;
+      let   pollTimer       = null;
+      let   lastCsvText     = null;
+      let   autoLoadTimer   = null;
 
-  // ── DOM shortcuts ─────────────────────────────────────────────────────────
-  const $ = id => document.getElementById(id);
+      // ── DOM refs ─────────────────────────────────────────────────────────────
+      const eventNameInput  = document.getElementById('event-name');
+      const personNameInput = document.getElementById('person-name');
+      const itsIdInput      = document.getElementById('its-id');
+      const mobileNoInput   = document.getElementById('mobile-no');
+      const amountPaidInput = document.getElementById('amount-paid');
+      const sheetUrlInput   = document.getElementById('sheet-url');
 
-  const rEvt  = $('r-evt'), rNam = $('r-nam'), rIts = $('r-its');
-  const rMob  = $('r-mob'), rAmt = $('r-amt'), rDate= $('r-date'), rDay = $('r-day');
+      const receiptEvent  = document.getElementById('receipt-event');
+      const receiptPerson = document.getElementById('receipt-person');
+      const receiptItsId  = document.getElementById('receipt-itsid');
+      const receiptMobile = document.getElementById('receipt-mobile');
+      const receiptAmount = document.getElementById('receipt-amount');
+      const receiptDate   = document.getElementById('receipt-date');
+      const receiptDay    = document.getElementById('receipt-day');
 
-  const statusBox = $('status-box');
-  const progEl    = $('prog');
-  const progBar   = $('prog-bar');
+      const statusContainer   = document.getElementById('status-container');
+      const progressContainer = document.getElementById('progress-container');
+      const progressBar       = document.getElementById('progress-bar');
+      const downloadPdfBtn    = document.getElementById('download-pdf');
+      const downloadSingleBtn = document.getElementById('download-single-pdf');
 
-  // ── Status helpers ────────────────────────────────────────────────────────
-  const st = (msg, type='info') => { statusBox.innerHTML = `<div class="status ${type}">${msg}</div>`; };
-  const stClear = () => { statusBox.innerHTML = ''; };
-  const setP = p => {
-    progBar.style.width = p + '%';
-    if (p >= 100) setTimeout(() => { progEl.style.display='none'; progBar.style.width='0%'; }, 700);
-  };
+      // ── Helpers ──────────────────────────────────────────────────────────────
+      function showStatus(msg, type = 'info') {
+        statusContainer.innerHTML = `<div class="status ${type}">${msg}</div>`;
+      }
+      function clearStatus() { statusContainer.innerHTML = ''; }
 
-  // ── Date helpers ──────────────────────────────────────────────────────────
-  function nowStr() {
-    const n = new Date();
-    return {
-      date: n.toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' }),
-      day:  n.toLocaleDateString('en-IN', { weekday:'long' })
-    };
-  }
-  function setDates() { const {date,day}=nowStr(); rDate.textContent=date; rDay.textContent=day; }
+      function updateProgress(pct) {
+        progressBar.style.width = pct + '%';
+        if (pct >= 100) setTimeout(() => {
+          progressContainer.style.display = 'none';
+          progressBar.style.width = '0%';
+        }, 800);
+      }
 
-  // ── Preview ───────────────────────────────────────────────────────────────
-  function showPreview(d=null) {
-    const {date,day} = nowStr();
-    rEvt.textContent  = d?.eventName  || $('f-event').value.trim() || '-';
-    rNam.textContent  = d?.personName || $('f-name').value.trim()  || '-';
-    rIts.textContent  = d?.itsId      || $('f-its').value.trim()   || '-';
-    rMob.textContent  = d?.mobileNo   || $('f-mob').value.trim()   || '-';
-    rAmt.textContent  = `Rs. ${d?.amountPaid || $('f-amt').value.trim() || '0'}/-`;
-    rDate.textContent = date;
-    rDay.textContent  = day;
-  }
+      function getCurrentDateStrings() {
+        const now = new Date();
+        return {
+          date: now.toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' }),
+          day:  now.toLocaleDateString('en-IN', { weekday:'long' })
+        };
+      }
 
-  function clearForm() {
-    ['f-event','f-name','f-its','f-mob','f-amt'].forEach(id => $(id).value = '');
-    rEvt.textContent='-'; rNam.textContent='-'; rIts.textContent='-';
-    rMob.textContent='-'; rAmt.textContent='Rs. 0/-';
-    $('f-event').focus();
-  }
+      function updateDateDisplay() {
+        const { date, day } = getCurrentDateStrings();
+        receiptDate.textContent = date;
+        receiptDay.textContent  = day;
+      }
 
-  function getPreview() {
-    return {
-      eventName:  rEvt.textContent  || '-',
-      personName: rNam.textContent  || '-',
-      itsId:      rIts.textContent  || '-',
-      mobileNo:   rMob.textContent  || '-',
-      amountPaid: (rAmt.textContent||'Rs. 0/-').replace('Rs. ','').replace('/-',''),
-      date:       rDate.textContent || '-',
-      day:        rDay.textContent  || '-',
-    };
-  }
+      // ── Receipt preview ──────────────────────────────────────────────────────
+      function generateSingleReceipt(data = null) {
+        const { date, day } = getCurrentDateStrings();
+        receiptEvent.textContent  = data?.eventName  || eventNameInput.value.trim()  || '-';
+        receiptPerson.textContent = data?.personName || personNameInput.value.trim() || '-';
+        receiptItsId.textContent  = data?.itsId      || itsIdInput.value.trim()      || '-';
+        receiptMobile.textContent = data?.mobileNo   || mobileNoInput.value.trim()   || '-';
+        receiptAmount.textContent = `Rs. ${data?.amountPaid || amountPaidInput.value.trim() || '0'}/-`;
+        receiptDate.textContent   = date;
+        receiptDay.textContent    = day;
+      }
 
-  // ── Fingerprint tracker ───────────────────────────────────────────────────
-  function getSet()    { try{return new Set(JSON.parse(localStorage.getItem(KEY_FP)||'[]'));}catch{return new Set();} }
-  function saveSet(s)  { localStorage.setItem(KEY_FP, JSON.stringify([...s])); }
-  function fp(r)       { return [r.personName,r.itsId,r.mobileNo,r.amountPaid,r.eventName].join('|').toLowerCase().trim(); }
-  function markDone(r) { const s=getSet(); s.add(fp(r)); saveSet(s); }
-  function isDone(r)   { return getSet().has(fp(r)); }
+      function clearForm() {
+        eventNameInput.value  = '';
+        personNameInput.value = '';
+        itsIdInput.value      = '';
+        mobileNoInput.value   = '';
+        amountPaidInput.value = '';
+        receiptEvent.textContent  = '-';
+        receiptPerson.textContent = '-';
+        receiptItsId.textContent  = '-';
+        receiptMobile.textContent = '-';
+        receiptAmount.textContent = 'Rs. 0/-';
+        eventNameInput.focus();
+      }
 
-  // ── CSV helpers ───────────────────────────────────────────────────────────
-  function toCsvUrl(url) {
-    const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    if (!m) throw new Error('Invalid Google Sheets URL.');
-    const gid = (url.match(/[#&?]gid=(\d+)/)||[])[1]||'0';
-    return url.includes('export?format=csv') ? url :
-      `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv&gid=${gid}`;
-  }
+      // ── CSV helpers ──────────────────────────────────────────────────────────
+      function convertShareUrlToCsvUrl(shareUrl) {
+        const m = shareUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (!m) throw new Error('Invalid Google Sheets URL.');
+        const sheetId = m[1];
+        const gid = (shareUrl.match(/[#&?]gid=(\d+)/) || [])[1] || '0';
+        if (shareUrl.includes('export?format=csv')) return shareUrl;
+        return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+      }
 
-  function parseLine(l) {
-    const v=[]; let c='',q=false;
-    for (let i=0;i<l.length;i++) {
-      const ch=l[i];
-      if (ch==='"'){if(q&&l[i+1]==='"'){c+='"';i++;}else q=!q;}
-      else if(ch===','&&!q){v.push(c.trim());c='';}
-      else c+=ch;
-    }
-    v.push(c.trim()); return v;
-  }
+      function parseCsvLine(line) {
+        const values = []; let current = ''; let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+            else inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) { values.push(current.trim()); current = ''; }
+          else current += ch;
+        }
+        values.push(current.trim());
+        return values;
+      }
 
-  function parseCSV(txt) {
-    const lines = txt.trim().replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-    if (lines.length < 2) throw new Error('Sheet needs header + data rows.');
-    const h = parseLine(lines[0]);
-    return lines.slice(1).map(row=>{
-      const v=parseLine(row), o={};
-      h.forEach((k,i)=>{o[k]=(v[i]||'').trim();});
-      return Object.values(o).some(x=>x) ? o : null;
-    }).filter(Boolean);
-  }
+      function parseCSV(csvText) {
+        const lines = csvText.trim().replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+        if (lines.length < 2) throw new Error('CSV must have at least a header and one data row.');
+        const headers = parseCsvLine(lines[0]);
+        return lines.slice(1).map(row => {
+          const values = parseCsvLine(row);
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = (values[i] || '').trim(); });
+          return Object.values(obj).some(v => v) ? obj : null;
+        }).filter(Boolean);
+      }
 
-  function mapRow(row) {
-    const f=(...kws)=>{
-      const k=Object.keys(row).find(k=>kws.some(w=>k.toLowerCase().includes(w.toLowerCase())));
-      return k?row[k]:'';
-    };
-    const {date,day}=nowStr();
-    return {
-      eventName:  f('contribution','event','for','purpose') || '-',
-      personName: f('name','person','member')               || '-',
-      itsId:      f('its','itsid','its_id','its id')        || '-',
-      mobileNo:   f('mobile','phone','contact','number')    || '-',
-      amountPaid: f('amount','paid','fee','rs','rupee')     || '0',
-      date, day
-    };
-  }
+      function mapRowToReceipt(row) {
+        const find = (...kws) => {
+          const key = Object.keys(row).find(k => kws.some(w => k.toLowerCase().includes(w.toLowerCase())));
+          return key ? row[key] : '';
+        };
+        const { date, day } = getCurrentDateStrings();
+        return {
+          eventName:  find('contribution','event','for','purpose')              || '-',
+          personName: find('name','person','member')             || '-',
+          itsId:      find('its','itsid','its_id','its id','id') || '-',
+          mobileNo:   find('mobile','phone','contact','number')  || '-',
+          amountPaid: find('amount','paid','fee','rs','rupee')   || '0',
+          date, day
+        };
+      }
 
-  // ── Load sheet ────────────────────────────────────────────────────────────
-  async function loadSheet() {
-    const url = $('sheet-url').value.trim();
-    if (!url) { st('Please enter a Google Sheets URL.','error'); return; }
-    stClear(); progEl.style.display='block'; progBar.style.width='0%';
-    $('btn-dl-all').disabled = $('btn-drv-all').disabled = true;
-    try {
-      st('Fetching from Google Sheets…','info'); setP(20);
-      const res = await fetch(toCsvUrl(url)+'&t='+Date.now());
-      if (!res.ok) throw new Error('HTTP '+res.status+' — make sure sheet is set to "Anyone with link can view".');
-      setP(50);
-      const csv = await res.text();
-      if (!csv.trim()) throw new Error('Sheet is empty.');
-      setP(70);
-      const rows = parseCSV(csv);
-      if (!rows.length) throw new Error('No data rows found.');
-      lastCsv = csv; allData = rows.map(mapRow);
-      setP(100);
-      const unsaved = allData.filter(r=>!isDone(r)).length;
-      const saved   = allData.length - unsaved;
-      st(saved>0
-        ? `✅ Loaded ${allData.length} — ${unsaved} new, ${saved} already done.`
-        : `✅ Loaded ${allData.length} receipt(s). Ready.`,
-        'success');
-      $('btn-dl-all').disabled = $('btn-drv-all').disabled = false;
-      if (allData.length > 0) showPreview(allData[0]);
-    } catch(err) {
-      st('❌ '+err.message,'error');
-      progEl.style.display='none'; progBar.style.width='0%';
-      $('btn-dl-all').disabled = $('btn-drv-all').disabled = true;
-    }
-  }
+      // ── Load sheet ───────────────────────────────────────────────────────────
+      async function loadSheetData() {
+        const url = sheetUrlInput.value.trim();
+        if (!url) { showStatus('Please enter a Google Sheets URL.', 'error'); return; }
 
-  // ── Logo ──────────────────────────────────────────────────────────────────
-  async function getLogo() {
-    if (logoB64) return logoB64;
-    try {
-      const res=await fetch('logo.png'); if(!res.ok) return null;
-      const blob=await res.blob();
-      return new Promise(resolve=>{
-        const fr=new FileReader();
-        fr.onloadend=()=>{ const du=fr.result; logoB64=du.split(',')[1]; const m=du.match(/data:image\/(\w+);/); if(m)logoMime=m[1].toUpperCase(); resolve(logoB64); };
-        fr.onerror=()=>resolve(null); fr.readAsDataURL(blob);
+        clearStatus();
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        downloadPdfBtn.disabled = true;
+
+        try {
+          showStatus('Fetching data from Google Sheets…', 'info');
+          const csvUrl = convertShareUrlToCsvUrl(url);
+          updateProgress(20);
+
+          const response = await fetch(csvUrl + '&t=' + Date.now());
+          if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+          updateProgress(50);
+          const csvText = await response.text();
+          if (!csvText || !csvText.trim()) throw new Error('Sheet appears empty or inaccessible.');
+
+          updateProgress(70);
+          const dataRows = parseCSV(csvText);
+          if (dataRows.length === 0) throw new Error('No valid data rows found.');
+
+          lastCsvText     = csvText;
+          allReceiptsData = dataRows.map(mapRowToReceipt);
+
+          updateProgress(100);
+          const unprinted    = allReceiptsData.filter(r => !isPrinted(r)).length;
+          const printedCount = allReceiptsData.length - unprinted;
+          showStatus(
+            printedCount > 0
+              ? `✅ Loaded ${allReceiptsData.length} receipt(s) — ${unprinted} new, ${printedCount} already printed.`
+              : `✅ Loaded ${allReceiptsData.length} receipt(s). Ready to download.`,
+            'success'
+          );
+          downloadPdfBtn.disabled = false;
+          if (allReceiptsData.length > 0) generateSingleReceipt(allReceiptsData[0]);
+
+        } catch (err) {
+          console.error('Sheet load error:', err);
+          showStatus(`❌ Error: ${err.message}`, 'error');
+          progressContainer.style.display = 'none';
+          progressBar.style.width = '0%';
+          downloadPdfBtn.disabled = true;
+        }
+      }
+
+      // ── Logo loader ──────────────────────────────────────────────────────────
+      let logoBase64 = null;
+      let logoMime   = 'PNG';
+
+      async function loadLogoBase64() {
+        if (logoBase64) return logoBase64;
+        try {
+          const res = await fetch('logo.png');
+          if (!res.ok) return null;
+          const blob = await res.blob();
+          return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const dataUrl = reader.result;
+              logoBase64    = dataUrl.split(',')[1];
+              const m       = dataUrl.match(/data:image\/(\w+);/);
+              if (m) logoMime = m[1].toUpperCase();
+              resolve(logoBase64);
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        } catch { return null; }
+      }
+
+      // ── PDF builder ──────────────────────────────────────────────────────────
+      function buildReceiptPage(pdf, receipt, logoB64) {
+        if (logoB64) { try { pdf.addImage(logoB64, logoMime, 18, 13, 22, 22); } catch {} }
+
+        pdf.setFontSize(15); pdf.setFont('helvetica','bold'); pdf.setTextColor(46,125,50);
+        pdf.text('Toloba ul kulliyaat il mumenoon', 105, 20, { align:'center' });
+        pdf.setFontSize(11); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
+        pdf.text('Fakhri Mohalla Poona', 105, 27, { align:'center' });
+        pdf.setFontSize(10); pdf.setFont('helvetica','italic'); pdf.setTextColor(120,120,120);
+        pdf.text('Official Receipt', 105, 33, { align:'center' });
+
+        pdf.setDrawColor(76,175,80); pdf.setLineWidth(0.8);
+        pdf.line(20, 39, 190, 39);
+
+        const details = [
+          ['Contribution For:',  receipt.eventName],
+          ['Person Name:',  receipt.personName],
+          ['ITS ID:',       receipt.itsId],
+          ['Mobile No:',    receipt.mobileNo],
+          ['Amount Paid:',  `Rs. ${receipt.amountPaid}/-`],
+          ['Date:',         receipt.date],
+          ['Day:',          receipt.day],
+        ];
+
+        let y = 54;
+        details.forEach(([label, value]) => {
+          pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(46,125,50);
+          pdf.text(label, 30, y);
+          pdf.setFont('helvetica','normal'); pdf.setTextColor(50,50,50);
+          pdf.text(String(value || '-'), 80, y);
+          pdf.setDrawColor(210,210,210); pdf.setLineWidth(0.25);
+          pdf.setLineDashPattern([1,2],0); pdf.line(30, y+3, 180, y+3); pdf.setLineDashPattern([],0);
+          y += 13;
+        });
+
+        const sigY = y + 36;
+        pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(50,50,50);
+        pdf.text('Mohammed Dilawer (Secretary)', 105, sigY, { align:'center' });
+        pdf.setDrawColor(180,180,180); pdf.setLineWidth(0.5); pdf.line(55, sigY + 2, 155, sigY + 2);
+        pdf.setFontSize(10); pdf.setFont('helvetica','italic'); pdf.setTextColor(150,150,150);
+        pdf.text('Authorized Signature', 105, sigY + 9, { align:'center' });
+      }
+
+      // ── Printed-receipt tracker ──────────────────────────────────────────────
+      function getPrintedSet() {
+        try { return new Set(JSON.parse(localStorage.getItem(PRINTED_KEY) || '[]')); }
+        catch { return new Set(); }
+      }
+      function savePrintedSet(set) {
+        localStorage.setItem(PRINTED_KEY, JSON.stringify([...set]));
+      }
+      function receiptFingerprint(r) {
+        return [r.personName, r.itsId, r.mobileNo, r.amountPaid, r.eventName]
+          .join('|').toLowerCase().trim();
+      }
+      function markPrintedLocal(r) {
+        const s = getPrintedSet(); s.add(receiptFingerprint(r)); savePrintedSet(s);
+      }
+      function isPrinted(r) {
+        return getPrintedSet().has(receiptFingerprint(r));
+      }
+
+      // ── Upload to Apps Script via hidden form (bypasses CORS + size limits) ────
+      function uploadToAppsScript(receipt, pdfBase64, fileName) {
+        if (!APPS_SCRIPT_URL) return;
+        try {
+          // Use a hidden <form> POST — works from file://, no CORS, no size limit
+          const form   = document.createElement('form');
+          form.method  = 'POST';
+          form.action  = APPS_SCRIPT_URL;
+          form.target  = '_hidden_upload';
+          form.style.display = 'none';
+
+          const fields = {
+            personName:  receipt.personName,
+            itsId:       receipt.itsId,
+            mobileNo:    receipt.mobileNo,
+            eventName:   receipt.eventName,
+            amountPaid:  receipt.amountPaid,
+            date:        receipt.date,
+            fileName:    fileName,
+            fingerprint: receiptFingerprint(receipt),
+            pdfBase64:   pdfBase64
+          };
+
+          Object.entries(fields).forEach(([k, v]) => {
+            const input  = document.createElement('input');
+            input.type   = 'hidden';
+            input.name   = k;
+            input.value  = v || '';
+            form.appendChild(input);
+          });
+
+          // Hidden iframe to absorb the response silently
+          let iframe = document.getElementById('_hidden_upload');
+          if (!iframe) {
+            iframe      = document.createElement('iframe');
+            iframe.name = '_hidden_upload';
+            iframe.id   = '_hidden_upload';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+          }
+
+          document.body.appendChild(form);
+          form.submit();
+          setTimeout(() => form.remove(), 3000);
+        } catch (err) { console.warn('Upload failed:', err); }
+      }
+
+      // ── Sync printed fingerprints from server ────────────────────────────────
+      async function syncPrintedFromServer() {
+        if (!APPS_SCRIPT_URL) return;
+        try {
+          const res  = await fetch(`${APPS_SCRIPT_URL}?action=list`);
+          if (!res.ok) return;
+          const json = await res.json();
+          if (Array.isArray(json.fingerprints) && json.fingerprints.length > 0) {
+            const local = getPrintedSet();
+            json.fingerprints.forEach(fp => local.add(fp));
+            savePrintedSet(local);
+          }
+        } catch { /* silent */ }
+      }
+
+      // ── Download single PDF ──────────────────────────────────────────────────
+      async function downloadSinglePDF() {
+        try {
+          downloadSingleBtn.disabled = true;
+
+          const receipt = {
+            eventName:  receiptEvent.textContent  || '-',
+            personName: receiptPerson.textContent || '-',
+            itsId:      receiptItsId.textContent  || '-',
+            mobileNo:   receiptMobile.textContent || '-',
+            amountPaid: (receiptAmount.textContent || 'Rs. 0/-').replace('Rs. ','').replace('/-',''),
+            date:       receiptDate.textContent   || '-',
+            day:        receiptDay.textContent    || '-',
+          };
+
+          if (isPrinted(receipt)) {
+            showStatus('⏭️ This receipt was already downloaded.', 'info');
+            return;
+          }
+
+          showStatus('Generating PDF…', 'info');
+          const logo      = await loadLogoBase64();
+          const { jsPDF } = window.jspdf;
+          const pdf       = new jsPDF('p','mm','a4');
+          buildReceiptPage(pdf, receipt, logo);
+
+          const dateStr   = new Date().toISOString().slice(0,10);
+          const safeName  = receipt.personName.replace(/[^a-zA-Z0-9]/g,'_');
+          const fileName  = `Receipt_${safeName}_${dateStr}.pdf`;
+          const pdfBase64 = pdf.output('datauristring').split(',')[1];
+
+          pdf.save(fileName);
+          markPrintedLocal(receipt);
+          uploadToAppsScript(receipt, pdfBase64, fileName);
+
+          showStatus('✅ Receipt downloaded & saving to Drive…', 'success');
+          clearForm();
+
+        } catch (err) {
+          console.error('Single PDF error:', err);
+          showStatus('❌ Error generating PDF. Please try again.', 'error');
+        } finally {
+          downloadSingleBtn.disabled = false;
+        }
+      }
+
+      // ── Download all PDFs ────────────────────────────────────────────────────
+      async function downloadAllPDF() {
+        if (allReceiptsData.length === 0) {
+          showStatus('No data loaded. Please load Google Sheets data first.', 'error');
+          return;
+        }
+
+        const newReceipts = allReceiptsData.filter(r => !isPrinted(r));
+        const skipped     = allReceiptsData.length - newReceipts.length;
+
+        if (newReceipts.length === 0) {
+          showStatus(`⏭️ All ${allReceiptsData.length} receipt(s) already downloaded. Nothing new.`, 'info');
+          return;
+        }
+
+        try {
+          downloadPdfBtn.disabled = true;
+          showStatus(`Downloading ${newReceipts.length} new receipt(s)${skipped > 0 ? ` · ${skipped} skipped` : ''}…`, 'info');
+
+          const logo      = await loadLogoBase64();
+          const { jsPDF } = window.jspdf;
+          const dateStr   = new Date().toISOString().slice(0,10);
+
+          for (let i = 0; i < newReceipts.length; i++) {
+            const receipt   = newReceipts[i];
+            const pdf       = new jsPDF('p','mm','a4');
+            buildReceiptPage(pdf, receipt, logo);
+
+            const safeName  = receipt.personName.replace(/[^a-zA-Z0-9]/g,'_') || `Receipt_${i+1}`;
+            const fileName  = `Receipt_${String(i+1).padStart(3,'0')}_${safeName}_${dateStr}.pdf`;
+            const pdfBase64 = pdf.output('datauristring').split(',')[1];
+
+            pdf.save(fileName);
+            markPrintedLocal(receipt);
+            uploadToAppsScript(receipt, pdfBase64, fileName);
+
+            if (i < newReceipts.length - 1) await new Promise(r => setTimeout(r, 350));
+          }
+
+          showStatus(
+            skipped > 0
+              ? `✅ Downloaded ${newReceipts.length} receipt(s) & saving to Drive. ${skipped} already printed skipped.`
+              : `✅ Downloaded ${newReceipts.length} receipt(s) & saving to Drive!`,
+            'success'
+          );
+
+        } catch (err) {
+          console.error('Bulk PDF error:', err);
+          showStatus('❌ Error generating PDFs. Please try again.', 'error');
+        } finally {
+          downloadPdfBtn.disabled = false;
+        }
+      }
+
+      // ── Sheet URL persistence ────────────────────────────────────────────────
+      const savedUrl = localStorage.getItem(STORAGE_KEY);
+      if (savedUrl) {
+        sheetUrlInput.value             = savedUrl;
+        sheetUrlInput.readOnly          = true;
+        sheetUrlInput.style.background  = '#f0f9f0';
+        sheetUrlInput.style.borderColor = '#4caf50';
+        sheetUrlInput.style.color       = '#2e7d32';
+        sheetUrlInput.style.fontWeight  = '600';
+        document.getElementById('sheet-url-hint').textContent = '✔ Sheet link saved. Fetching data automatically…';
+      }
+
+      sheetUrlInput.addEventListener('input', () => {
+        const val = sheetUrlInput.value.trim();
+        if (val && val.includes('docs.google.com/spreadsheets')) {
+          localStorage.setItem(STORAGE_KEY, val);
+          sheetUrlInput.readOnly          = true;
+          sheetUrlInput.style.background  = '#f0f9f0';
+          sheetUrlInput.style.borderColor = '#4caf50';
+          sheetUrlInput.style.color       = '#2e7d32';
+          sheetUrlInput.style.fontWeight  = '600';
+          document.getElementById('sheet-url-hint').textContent = '✔ Sheet link saved permanently. Auto-fetching…';
+          clearTimeout(autoLoadTimer);
+          stopPolling();
+          autoLoadTimer = setTimeout(() => loadSheetData(), 600);
+        } else if (!val) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
       });
-    } catch { return null; }
-  }
 
-  // ── Build jsPDF receipt ───────────────────────────────────────────────────
-  function buildPDF(r, logo) {
-    const {jsPDF}=window.jspdf;
-    const pdf=new jsPDF('p','mm','a4');
+      document.getElementById('clear-sheet-url').addEventListener('click', () => {
+        localStorage.removeItem(STORAGE_KEY);
+        sheetUrlInput.value             = '';
+        sheetUrlInput.readOnly          = false;
+        sheetUrlInput.style.background  = '';
+        sheetUrlInput.style.borderColor = '';
+        sheetUrlInput.style.color       = '';
+        sheetUrlInput.style.fontWeight  = '';
+        document.getElementById('sheet-url-hint').textContent = 'Paste once — saved permanently. Data auto-fetches on every page load.';
+        stopPolling();
+        allReceiptsData = [];
+        downloadPdfBtn.disabled = true;
+        clearStatus();
+        sheetUrlInput.focus();
+      });
 
-    if (logo){try{pdf.addImage(logo,logoMime,18,13,22,22);}catch{}}
+      // ── Background polling ───────────────────────────────────────────────────
+      async function silentRefresh() {
+        const url = sheetUrlInput.value.trim();
+        if (!url || !url.includes('docs.google.com/spreadsheets')) return;
+        try {
+          const csvUrl  = convertShareUrlToCsvUrl(url);
+          const res     = await fetch(csvUrl + '&t=' + Date.now());
+          if (!res.ok) return;
+          const csvText = await res.text();
+          if (!csvText || !csvText.trim() || csvText === lastCsvText) return;
+          lastCsvText = csvText;
 
-    pdf.setFontSize(14); pdf.setFont('helvetica','bold'); pdf.setTextColor(46,125,50);
-    pdf.text('Toloba ul kulliyaat il mumenoon',105,20,{align:'center'});
-    pdf.setFontSize(10); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
-    pdf.text('Fakhri Mohalla Poona',105,27,{align:'center'});
-    pdf.setFontSize(9); pdf.setFont('helvetica','italic'); pdf.setTextColor(130,130,130);
-    pdf.text('Official Receipt',105,33,{align:'center'});
-    pdf.setDrawColor(76,175,80); pdf.setLineWidth(0.8); pdf.line(20,39,190,39);
+          const dataRows  = parseCSV(csvText);
+          if (dataRows.length === 0) return;
 
-    const rows=[
-      ['Contribution For:',r.eventName],
-      ['Person Name:',     r.personName],
-      ['ITS ID:',          r.itsId],
-      ['Mobile No:',       r.mobileNo],
-      ['Amount Paid:',     `Rs. ${r.amountPaid}/-`],
-      ['Date:',            r.date],
-      ['Day:',             r.day],
-    ];
-    let y=54;
-    rows.forEach(([l,v])=>{
-      pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(46,125,50);
-      pdf.text(l,30,y);
-      pdf.setFont('helvetica','normal'); pdf.setTextColor(50,50,50);
-      pdf.text(String(v||'-'),82,y);
-      pdf.setDrawColor(210,210,210); pdf.setLineWidth(0.2);
-      pdf.setLineDashPattern([1,2],0); pdf.line(30,y+3,180,y+3); pdf.setLineDashPattern([],0);
-      y+=12;
+          const prevCount = allReceiptsData.length;
+          allReceiptsData = dataRows.map(mapRowToReceipt);
+          const newCount  = allReceiptsData.length;
+          const added     = newCount - prevCount;
+          const unprinted = allReceiptsData.filter(r => !isPrinted(r)).length;
+
+          downloadPdfBtn.disabled = false;
+          generateSingleReceipt(allReceiptsData[allReceiptsData.length - 1]);
+
+          showStatus(
+            added > 0
+              ? `🔄 ${added} new entr${added > 1 ? 'ies' : 'y'} detected! Total: ${newCount} — ${unprinted} not yet printed.`
+              : `🔄 Sheet updated — ${newCount} receipt(s), ${unprinted} not yet printed.`,
+            'success'
+          );
+
+          const rs = document.querySelector('.receipt-section');
+          rs.style.transition = 'box-shadow 0.3s';
+          rs.style.boxShadow  = '0 0 0 3px #4caf50';
+          setTimeout(() => { rs.style.boxShadow = ''; }, 1500);
+        } catch { /* silent */ }
+      }
+
+      function startPolling() { stopPolling(); pollTimer = setInterval(silentRefresh, POLL_INTERVAL); }
+      function stopPolling()  { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+      // ── Event listeners ──────────────────────────────────────────────────────
+      document.getElementById('load-sheet').addEventListener('click', () => loadSheetData());
+
+      document.getElementById('generate-single').addEventListener('click', () => {
+        generateSingleReceipt(); // fill preview from inputs
+        // Clear only the input fields — leave the receipt preview visible
+        eventNameInput.value  = '';
+        personNameInput.value = '';
+        itsIdInput.value      = '';
+        mobileNoInput.value   = '';
+        amountPaidInput.value = '';
+        eventNameInput.focus();
+      });
+
+      downloadSingleBtn.addEventListener('click', () => downloadSinglePDF());
+      downloadPdfBtn.addEventListener('click',    () => downloadAllPDF());
+
+      // ── Startup ──────────────────────────────────────────────────────────────
+      async function startup() {
+        updateDateDisplay();
+        await syncPrintedFromServer();
+        const url = sheetUrlInput.value.trim();
+        if (url && url.includes('docs.google.com/spreadsheets')) {
+          await loadSheetData();
+          startPolling();
+        }
+      }
+
+      startup();
     });
-    const sy=y+26;
-    pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(50,50,50);
-    pdf.text('Mohammed Dilawer (Secretary)',105,sy,{align:'center'});
-    pdf.setDrawColor(180,180,180); pdf.setLineWidth(0.4); pdf.line(62,sy+4,148,sy+4);
-    pdf.setFontSize(9); pdf.setFont('helvetica','italic'); pdf.setTextColor(150,150,150);
-    pdf.text('Authorized Signature',105,sy+10,{align:'center'});
-
-    return pdf;
-  }
-
-  // ── Apps Script communication ─────────────────────────────────────────────
-  function getScriptUrl() { return $('script-url').value.trim(); }
-
-  async function callScript(params) {
-    const url = getScriptUrl();
-    if (!url) return { success:false, error:'No Apps Script URL. Paste it in the Setup box.' };
-    try {
-      const p   = new URLSearchParams(params);
-      const res = await fetch(`${url}?${p}`, { redirect:'follow' });
-      const txt = await res.text();
-      console.log('Script response:', txt);
-      try { return JSON.parse(txt); }
-      catch {
-        if (txt.includes('accounts.google.com')||txt.includes('SignIn'))
-          return {success:false, error:'Deployment "Who has access" must be set to "Anyone" (not "Anyone with Google account").'};
-        return {success:false, error:'Unexpected response: '+txt.slice(0,100)};
-      }
-    } catch(err) { return {success:false, error:err.message}; }
-  }
-
-  async function testScript() {
-    const m = $('script-msg');
-    m.textContent='Testing…'; m.className='';
-    const res = await callScript({action:'test'});
-    if (res.status==='ok') {
-      m.textContent='✅ Connected! Apps Script is working.'; m.className='ok';
-    } else {
-      m.textContent='❌ '+(res.error||res.message||JSON.stringify(res)); m.className='bad';
-    }
-  }
-
-  async function syncFingerprints() {
-    const res = await callScript({action:'list'});
-    if (Array.isArray(res.fingerprints) && res.fingerprints.length) {
-      const s = getSet(); res.fingerprints.forEach(f=>s.add(f)); saveSet(s);
-    }
-  }
-
-  async function saveToDrive(r) {
-    const safe = r.personName.replace(/[^a-zA-Z0-9]/g,'_');
-    const ds   = new Date().toISOString().slice(0,10);
-    return callScript({
-      action:      'save',
-      personName:  r.personName,
-      itsId:       r.itsId,
-      mobileNo:    r.mobileNo,
-      eventName:   r.eventName,
-      amountPaid:  r.amountPaid,
-      date:        r.date,
-      day:         r.day,
-      fileName:    `Receipt_${safe}_${ds}.pdf`,
-      fingerprint: fp(r)
-    });
-  }
-
-  // ── Download single ───────────────────────────────────────────────────────
-  async function dlOne() {
-    const btn=$('btn-dl-one'); btn.disabled=true;
-    try {
-      const r=getPreview();
-      if(isDone(r)){st('⏭️ Already downloaded.','info');return;}
-      st('Generating PDF…','info');
-      const logo=await getLogo(), pdf=buildPDF(r,logo);
-      const fn=`Receipt_${r.personName.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`;
-      pdf.save(fn); markDone(r);
-      st('✅ Receipt downloaded!','success'); clearForm();
-    } catch(e){st('❌ '+e.message,'error');}
-    finally{btn.disabled=false;}
-  }
-
-  // ── Download all ──────────────────────────────────────────────────────────
-  async function dlAll() {
-    if (!allData.length){st('Load sheet data first.','error');return;}
-    const news=allData.filter(r=>!isDone(r)), skip=allData.length-news.length;
-    if (!news.length){st('⏭️ All receipts already downloaded.','info');return;}
-    const btn=$('btn-dl-all'); btn.disabled=true;
-    try {
-      st(`Downloading ${news.length} receipt(s)…`,'info');
-      const logo=await getLogo(), ds=new Date().toISOString().slice(0,10);
-      for(let i=0;i<news.length;i++){
-        const r=news[i], pdf=buildPDF(r,logo);
-        pdf.save(`Receipt_${String(i+1).padStart(3,'0')}_${r.personName.replace(/[^a-zA-Z0-9]/g,'_')}_${ds}.pdf`);
-        markDone(r);
-        if(i<news.length-1) await new Promise(res=>setTimeout(res,350));
-      }
-      st(`✅ Downloaded ${news.length}${skip?` · ${skip} skipped`:''}. `,'success');
-    } catch(e){st('❌ '+e.message,'error');}
-    finally{btn.disabled=false;}
-  }
-
-  // ── Drive single ──────────────────────────────────────────────────────────
-  async function drvOne() {
-    const btn=$('btn-drv-one'); btn.disabled=true;
-    try {
-      const r=getPreview();
-      if(isDone(r)){st('⏭️ Already saved to Drive.','info');return;}
-      st('Saving to Drive…','info');
-      const res=await saveToDrive(r);
-      if(res.duplicate){markDone(r);st('⏭️ Already in Drive.','info');return;}
-      if(!res.success){st('❌ '+(res.error||'Failed.'),'error');return;}
-      markDone(r);
-      const lnk=res.driveLink?` <a href="${res.driveLink}" target="_blank" style="color:#1565c0;">📄 Open PDF</a>`:'';
-      st('✅ Saved to Drive!'+lnk,'success'); clearForm();
-    } catch(e){st('❌ '+e.message,'error');}
-    finally{btn.disabled=false;}
-  }
-
-  // ── Drive all ─────────────────────────────────────────────────────────────
-  async function drvAll() {
-    if(!allData.length){st('Load sheet data first.','error');return;}
-    const news=allData.filter(r=>!isDone(r)), skip=allData.length-news.length;
-    if(!news.length){st('⏭️ All receipts already in Drive.','info');return;}
-    const btn=$('btn-drv-all'); btn.disabled=true;
-    try {
-      let ok=0,fail=0;
-      for(let i=0;i<news.length;i++){
-        st(`Saving ${i+1} of ${news.length} to Drive…`,'info');
-        const res=await saveToDrive(news[i]);
-        if(res.success||res.duplicate){markDone(news[i]);ok++;}
-        else{fail++;console.warn('Drive fail:',res.error);}
-        if(i<news.length-1) await new Promise(res=>setTimeout(res,700));
-      }
-      st(`✅ ${ok} saved to Drive${skip?` · ${skip} skipped`:''}${fail?` · ${fail} failed — check console`:''}. `,fail?'error':'success');
-    } catch(e){st('❌ '+e.message,'error');}
-    finally{btn.disabled=false;}
-  }
-
-  // ── Background polling ────────────────────────────────────────────────────
-  async function poll() {
-    const url=$('sheet-url').value.trim();
-    if(!url||!url.includes('docs.google.com/spreadsheets')) return;
-    try {
-      const res=await fetch(toCsvUrl(url)+'&t='+Date.now());
-      if(!res.ok) return;
-      const csv=await res.text();
-      if(!csv.trim()||csv===lastCsv) return;
-      lastCsv=csv;
-      const rows=parseCSV(csv); if(!rows.length) return;
-      const prev=allData.length; allData=rows.map(mapRow);
-      const added=allData.length-prev, unsaved=allData.filter(r=>!isDone(r)).length;
-      $('btn-dl-all').disabled=$('btn-drv-all').disabled=false;
-      showPreview(allData[allData.length-1]);
-      st(added>0?`🔄 ${added} new entr${added>1?'ies':'y'} detected! ${unsaved} not yet done.`:`🔄 Sheet updated — ${unsaved} not yet done.`,'success');
-      const rs=document.querySelector('.receipt-section');
-      rs.style.transition='box-shadow 0.3s'; rs.style.boxShadow='0 0 0 3px #4caf50';
-      setTimeout(()=>{rs.style.boxShadow='';},1500);
-    } catch{}
-  }
-  function startPoll(){stopPoll();pollTimer=setInterval(poll,POLL_MS);}
-  function stopPoll() {if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
-
-  // ── Persistence ───────────────────────────────────────────────────────────
-  // Sheet URL
-  const sv=localStorage.getItem(KEY_SHEET);
-  const sheetInp=$('sheet-url');
-  if(sv){ sheetInp.value=sv; sheetInp.readOnly=true; $('sheet-hint').textContent='✔ Saved. Auto-loads on open.'; }
-
-  sheetInp.addEventListener('input',()=>{
-    const v=sheetInp.value.trim();
-    if(v&&v.includes('docs.google.com/spreadsheets')){
-      localStorage.setItem(KEY_SHEET,v);
-      sheetInp.readOnly=true; $('sheet-hint').textContent='✔ Saved permanently.';
-      clearTimeout(autoTimer); stopPoll();
-      autoTimer=setTimeout(()=>loadSheet(),700);
-    } else if(!v) localStorage.removeItem(KEY_SHEET);
-  });
-
-  $('btn-clear-sheet').addEventListener('click',()=>{
-    localStorage.removeItem(KEY_SHEET);
-    sheetInp.value=''; sheetInp.readOnly=false;
-    sheetInp.style.background=sheetInp.style.borderColor=sheetInp.style.color=sheetInp.style.fontWeight='';
-    $('sheet-hint').textContent='Paste once — saved permanently.';
-    stopPoll(); allData=[]; $('btn-dl-all').disabled=$('btn-drv-all').disabled=true;
-    stClear(); sheetInp.focus();
-  });
-
-  // Apps Script URL
-  const scv=localStorage.getItem(KEY_SCRIPT);
-  const scriptInp=$('script-url');
-  if(scv){ scriptInp.value=scv; }
-
-  scriptInp.addEventListener('input',()=>{
-    const v=scriptInp.value.trim();
-    if(v) localStorage.setItem(KEY_SCRIPT,v);
-    else  localStorage.removeItem(KEY_SCRIPT);
-  });
-
-  $('btn-clear-script').addEventListener('click',()=>{
-    localStorage.removeItem(KEY_SCRIPT); scriptInp.value='';
-    $('script-msg').textContent=''; $('script-msg').className='';
-  });
-
-  // ── Buttons ───────────────────────────────────────────────────────────────
-  $('btn-test-script').addEventListener('click', testScript);
-  $('btn-load').addEventListener('click', loadSheet);
-
-  $('btn-gen').addEventListener('click',()=>{
-    showPreview();
-    ['f-event','f-name','f-its','f-mob','f-amt'].forEach(id=>$(id).value='');
-    $('f-event').focus();
-  });
-
-  $('btn-dl-one').addEventListener('click',  dlOne);
-  $('btn-dl-all').addEventListener('click',  dlAll);
-  $('btn-drv-one').addEventListener('click', drvOne);
-  $('btn-drv-all').addEventListener('click', drvAll);
-
-  // ── Startup ───────────────────────────────────────────────────────────────
-  async function startup() {
-    setDates();
-    await syncFingerprints();
-    const url=sheetInp.value.trim();
-    if(url&&url.includes('docs.google.com/spreadsheets')){ await loadSheet(); startPoll(); }
-  }
-
-  startup();
-});
-</script>
+  </script>
 </body>
 </html>
