@@ -11,66 +11,67 @@
       background-color: #f5f7fa;
       color: #333;
       line-height: 1.6;
-      padding: 16px;
+      padding: 20px;
       min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
     }
 
     .container {
       max-width: 1200px;
-      margin: 0 auto;
+      width: 100%;
       background: white;
       border-radius: 12px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       overflow: hidden;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      padding: 30px;
     }
 
     header {
+      width: 100%;
       background: linear-gradient(135deg, #4caf50, #2e7d32);
       color: white;
       text-align: center;
-      padding: 24px 16px;
+      padding: 30px 20px;
+      border-radius: 12px 12px 0 0;
       font-weight: 600;
-      font-size: clamp(1.1rem, 4vw, 1.6rem);
-      letter-spacing: 0.5px;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
       user-select: none;
-      line-height: 1.4;
-    }
-
-    .content-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0;
+      margin: -30px -30px 0 -30px;
     }
 
     .form-section {
-      flex: 1 1 320px;
+      flex: 1 1 350px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      padding: 24px 20px;
-      border-right: 1px solid #e0e0e0;
+      gap: 20px;
     }
 
     .form-section h2 {
       color: #2e7d32;
       font-weight: 700;
-      font-size: 1.2rem;
+      font-size: 1.6rem;
+      margin-bottom: 15px;
       border-bottom: 2px solid #e0e0e0;
       padding-bottom: 8px;
     }
 
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
 
-    label { font-weight: 600; color: #555; font-size: 0.9rem; }
+    label { font-weight: 600; color: #555; font-size: 1rem; }
 
     input, textarea {
-      padding: 11px 13px;
+      padding: 12px 14px;
       font-size: 1rem;
       border: 2px solid #ddd;
       border-radius: 8px;
       transition: border-color 0.3s ease;
       font-family: inherit;
-      width: 100%;
     }
 
     textarea { resize: vertical; min-height: 80px; }
@@ -79,249 +80,231 @@
       outline: none;
       border-color: #4caf50;
       box-shadow: 0 0 6px rgba(76,175,80,0.4);
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      background-color: #fff;
     }
 
     button {
       background: #4caf50;
       color: white;
       border: none;
-      padding: 13px 16px;
+      padding: 14px 0;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 700;
       transition: background-color 0.3s ease;
       width: 100%;
+      margin-top: 10px;
       user-select: none;
-      touch-action: manipulation;
-      min-height: 48px;
     }
 
     button:hover:not(:disabled) { background: #2e7d32; }
     button:disabled { background: #ccc; cursor: not-allowed; }
-    button.download { background: #ff5722; }
+    button.download { background: #ff5722; margin-top: 10px; }
     button.download:hover:not(:disabled) { background: #e64a19; }
 
-    .url-row {
-      display: flex;
-      gap: 8px;
-      align-items: stretch;
-    }
-    .url-row input { flex: 1; min-width: 0; }
-    .url-row .clear-btn {
-      width: auto;
-      flex-shrink: 0;
-      padding: 11px 14px;
-      background: #e53935;
-      font-size: 0.9rem;
-      border-radius: 8px;
-      min-height: 48px;
-    }
-    .url-row .clear-btn:hover { background: #b71c1c; }
-
-    .status { padding: 10px 12px; border-radius: 8px; font-weight: 600; text-align: center; font-size: 0.9rem; }
+    .status { padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: 600; text-align: center; }
     .status.success { background: #e8f5e8; color: #2e7d32; border: 1px solid #4caf50; }
     .status.error   { background: #ffebee; color: #c62828; border: 1px solid #f44336; }
     .status.info    { background: #e3f2fd; color: #1565c0; border: 1px solid #2196f3; }
 
-    .progress { width: 100%; height: 8px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
+    .progress { width: 100%; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin: 10px 0; }
     .progress-bar { height: 100%; background: linear-gradient(90deg, #4caf50, #2e7d32); width: 0%; transition: width 0.3s ease; }
 
     .receipt-section {
-      flex: 1 1 320px;
-      padding: 24px 20px;
+      flex: 1 1 450px;
       background: #f9f9f9;
+      border-radius: 12px;
+      padding: 30px 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       display: flex;
       flex-direction: column;
-      gap: 16px;
-    }
-
-    .receipt {
-      background: white;
-      border-radius: 10px;
-      border: 1px solid #e0e0e0;
-      padding: 20px 16px;
+      gap: 20px;
+      position: relative;
     }
 
     .receipt-header {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 15px;
       border-bottom: 2px solid #4caf50;
-      padding-bottom: 14px;
-      margin-bottom: 14px;
+      padding-bottom: 15px;
+      justify-content: center;
     }
 
     .receipt-logo {
-      width: 56px;
-      height: 56px;
-      flex-shrink: 0;
+      width: 70px; height: 70px;
       object-fit: contain;
       border-radius: 8px;
       border: 1.5px solid #4caf50;
       background: white;
-      padding: 4px;
+      padding: 5px;
+      box-shadow: 0 2px 6px rgba(76,175,80,0.3);
     }
 
-    .receipt-header h3 { font-size: 1rem; color: #2e7d32; font-weight: 700; line-height: 1.3; }
-    .receipt-header p  { color: #555; font-size: 0.85rem; margin-top: 3px; }
+    .receipt-header h3 { font-size: 1.3rem; color: #2e7d32; font-weight: 700; user-select: none; }
+    .receipt-header p  { color: #555; font-size: 1rem; margin-top: 4px; user-select: none; }
 
-    .receipt-details { display: flex; flex-direction: column; gap: 0; }
+    .receipt-details { display: flex; flex-direction: column; gap: 14px; font-size: 1.1rem; color: #444; text-align: center; }
 
     .receipt-item {
       display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
+      justify-content: center;
+      gap: 10px;
       border-bottom: 1px dashed #ccc;
-      padding: 8px 0;
+      padding-bottom: 8px;
+      user-select: none;
     }
     .receipt-item:last-child { border-bottom: none; }
 
-    .item-label {
-      font-weight: 600;
-      color: #2e7d32;
-      font-size: 0.85rem;
-      white-space: nowrap;
-      flex-shrink: 0;
+    .item-label { font-weight: 600; color: #2e7d32; min-width: 130px; text-align: right; }
+
+    .signature { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #ddd; font-style: italic; color: #666; user-select: none; }
+
+    @media (max-width: 768px) {
+      .container { flex-direction: column; padding: 20px; }
+      .form-section, .receipt-section { flex: 1 1 100%; max-width: 100%; }
     }
-
-    .item-value {
-      font-size: 0.9rem;
-      color: #333;
-      text-align: right;
-      word-break: break-word;
+  
+    /* ── Login Screen ── */
+    #login-screen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(135deg, #e8f5e9, #f5f7fa);
+      display: flex; align-items: center; justify-content: center;
     }
+    #login-screen.hidden { display: none; }
 
-    .signature {
-      margin-top: 24px;
-      text-align: center;
-      padding-top: 16px;
-      border-top: 1px solid #ddd;
-      font-style: italic;
-      color: #666;
-      font-size: 0.9rem;
+    .login-card {
+      background: white; border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+      padding: 48px 40px; width: 100%; max-width: 400px;
+      text-align: center; margin: 16px;
     }
-
-    @media (max-width: 700px) {
-      body { padding: 8px; }
-
-      .content-wrap { flex-direction: column; }
-
-      .form-section {
-        border-right: none;
-        border-bottom: 1px solid #e0e0e0;
-        padding: 20px 16px;
-      }
-
-      .receipt-section { padding: 20px 16px; }
-
-      .receipt { padding: 16px 12px; }
-
-      .receipt-header { gap: 10px; }
-      .receipt-logo { width: 46px; height: 46px; }
-      .receipt-header h3 { font-size: 0.9rem; }
-
-      .item-label { font-size: 0.8rem; }
-      .item-value { font-size: 0.85rem; }
+    .login-logo {
+      width: 80px; height: 80px; object-fit: contain;
+      border: 2px solid #4caf50; border-radius: 12px;
+      padding: 6px; margin: 0 auto 18px; display: block;
     }
-
-    @media (max-width: 400px) {
-      header { font-size: 1rem; padding: 18px 12px; }
-
-      .receipt-item { flex-direction: column; align-items: flex-start; gap: 2px; }
-      .item-value { text-align: left; }
+    .login-title { font-size: 1.3rem; font-weight: 700; color: #2e7d32; margin-bottom: 4px; }
+    .login-sub   { font-size: 0.88rem; color: #888; margin-bottom: 28px; }
+    .login-label { font-size: 0.93rem; font-weight: 600; color: #555; text-align: left; display: block; margin-bottom: 7px; }
+    .login-input {
+      width: 100%; padding: 13px 15px; font-size: 1.05rem;
+      border: 2px solid #ddd; border-radius: 10px;
+      outline: none; transition: border-color 0.2s;
+      letter-spacing: 2px; text-align: center; font-family: inherit;
     }
+    .login-input:focus { border-color: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.3); }
+    .login-btn {
+      width: 100%; padding: 14px; margin-top: 18px;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white; border: none; border-radius: 10px;
+      font-size: 1.05rem; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s; min-height: 48px; touch-action: manipulation;
+    }
+    .login-btn:hover { opacity: 0.9; }
+    .login-error {
+      margin-top: 14px; padding: 10px; border-radius: 8px;
+      background: #ffebee; color: #c62828; font-weight: 600;
+      font-size: 0.88rem; display: none;
+    }
+    .login-error.show { display: block; }
+
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+
+  <!-- Login Screen -->
+  <div id="login-screen">
+    <div class="login-card">
+      <img src="logo.png" alt="Logo" class="login-logo" onerror="this.style.display='none'" />
+      <div class="login-title">Toloba ul kulliyaat il mumenoon</div>
+      <div class="login-sub">Fakhri Mohalla Poona — Receipt Generator</div>
+      <label class="login-label" for="login-phone">Enter your Mobile Number</label>
+      <input type="tel" id="login-phone" class="login-input" placeholder="Enter phone number" maxlength="15" />
+      <button class="login-btn" id="login-btn">Access Generator</button>
+      <div class="login-error" id="login-error">❌ Access denied. Phone number not authorized.</div>
+    </div>
+  </div>
+
   <div class="container">
     <header>Toloba ul kulliyaat il mumenoon — Receipt Generator</header>
 
-    <div class="content-wrap">
-      <!-- Form -->
-      <div class="form-section">
-        <h2>Google Sheets Integration</h2>
+    <div class="form-section">
+      <h2>Google Sheets Integration</h2>
 
-        <div class="form-group">
-          <label for="sheet-url">Google Sheets Source <span style="color:#4caf50;font-size:0.8rem;">✔ Saved</span></label>
-          <div class="url-row">
-            <input type="text" id="sheet-url" placeholder="Paste your Google Sheets link once…" />
-            <button id="clear-sheet-url" class="clear-btn" title="Clear">✕</button>
-          </div>
-          <small id="sheet-url-hint" style="color:#888;font-size:0.8rem;margin-top:2px;">
-            Paste once — saved permanently. Data auto-fetches on every page load.
-          </small>
+      <div class="form-group">
+        <label for="sheet-url">Google Sheets Source <span style="color:#4caf50;font-size:0.85rem;">✔ Saved</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="sheet-url" placeholder="Paste your Google Sheets link once…" style="flex:1;" />
+          <button id="clear-sheet-url" title="Clear" style="width:auto;padding:12px 14px;margin:0;background:#e53935;font-size:0.9rem;">✕</button>
         </div>
-
-        <button id="load-sheet">Load Sheet Data</button>
-
-        <div id="status-container"></div>
-        <div class="progress" id="progress-container" style="display:none;">
-          <div class="progress-bar" id="progress-bar"></div>
-        </div>
-
-        <h2>Manual Entry</h2>
-
-        <div class="form-group">
-          <label for="event-name">Contribution For (Event)</label>
-          <input type="text" id="event-name" placeholder="Enter event name" />
-        </div>
-        <div class="form-group">
-          <label for="person-name">Person Name</label>
-          <input type="text" id="person-name" placeholder="Enter person name" />
-        </div>
-        <div class="form-group">
-          <label for="its-id">ITS ID</label>
-          <input type="text" id="its-id" placeholder="Enter ITS ID" inputmode="numeric" />
-        </div>
-        <div class="form-group">
-          <label for="mobile-no">Mobile Number</label>
-          <input type="tel" id="mobile-no" placeholder="Enter mobile number" inputmode="tel" />
-        </div>
-        <div class="form-group">
-          <label for="amount-paid">Amount Paid (Rs.)</label>
-          <input type="number" id="amount-paid" placeholder="Enter amount" inputmode="numeric" />
-        </div>
-
-        <button id="generate-single">Generate Single Receipt</button>
-        <button id="download-single-pdf" class="download">Download Single Receipt as PDF</button>
-        <button id="download-pdf" class="download" disabled>Download All Receipts as PDF</button>
+        <small id="sheet-url-hint" style="color:#888;font-size:0.82rem;margin-top:3px;">
+          Paste once — saved permanently. Data auto-fetches on every page load.
+        </small>
       </div>
 
-      <!-- Receipt Preview -->
-      <div class="receipt-section">
-        <div class="receipt" id="receipt">
-          <div class="receipt-header">
-            <img src="logo.png" alt="Logo" class="receipt-logo" onerror="this.style.display='none'" />
-            <div>
-              <h3>Toloba ul kulliyaat il mumenoon<br>Fakhri Mohalla Poona</h3>
-              <p>Official Receipt</p>
-            </div>
-          </div>
+      <button id="load-sheet">Load Sheet Data</button>
 
-          <div class="receipt-details">
-            <div class="receipt-item"><span class="item-label">Contribution For:</span><span class="item-value" id="receipt-event">-</span></div>
-            <div class="receipt-item"><span class="item-label">Person Name:</span><span class="item-value" id="receipt-person">-</span></div>
-            <div class="receipt-item"><span class="item-label">ITS ID:</span><span class="item-value" id="receipt-itsid">-</span></div>
-            <div class="receipt-item"><span class="item-label">Mobile No:</span><span class="item-value" id="receipt-mobile">-</span></div>
-            <div class="receipt-item"><span class="item-label">Amount Paid:</span><span class="item-value" id="receipt-amount">Rs. 0/-</span></div>
-            <div class="receipt-item"><span class="item-label">Date:</span><span class="item-value" id="receipt-date">-</span></div>
-            <div class="receipt-item"><span class="item-label">Day:</span><span class="item-value" id="receipt-day">-</span></div>
-          </div>
+      <div id="status-container"></div>
+      <div class="progress" id="progress-container" style="display:none;">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
 
-          <div class="signature">
-            <p style="margin-bottom:2px;"><strong>Mohammed Dilawer</strong> (Secretary)</p>
-            <p style="margin-top:0;line-height:1;">_________________________</p>
-            <p>Authorized Signature</p>
+      <h2>Manual Entry</h2>
+
+      <div class="form-group">
+        <label for="event-name">Contribution For (Event)</label>
+        <input type="text" id="event-name" placeholder="Enter event name" />
+      </div>
+      <div class="form-group">
+        <label for="person-name">Person Name</label>
+        <input type="text" id="person-name" placeholder="Enter person name" />
+      </div>
+      <div class="form-group">
+        <label for="its-id">ITS ID</label>
+        <input type="text" id="its-id" placeholder="Enter ITS ID" />
+      </div>
+      <div class="form-group">
+        <label for="mobile-no">Mobile Number</label>
+        <input type="text" id="mobile-no" placeholder="Enter mobile number" />
+      </div>
+      <div class="form-group">
+        <label for="amount-paid">Amount Paid (Rs.)</label>
+        <input type="number" id="amount-paid" placeholder="Enter amount" />
+      </div>
+
+      <button id="generate-single">Generate Single Receipt</button>
+      <button id="download-single-pdf" class="download">Download Single Receipt as PDF</button>
+      <button id="download-pdf" class="download" disabled>Download All Receipts as PDF</button>
+    </div>
+
+    <!-- Receipt Preview -->
+    <div class="receipt-section">
+      <div class="receipt" id="receipt">
+        <div class="receipt-header">
+          <img src="logo.png" alt="Logo" class="receipt-logo" onerror="this.style.display='none'" />
+          <div>
+            <h3>Toloba ul kulliyaat il mumenoon<br>Fakhri Mohalla Poona</h3>
+            <p>Official Receipt</p>
           </div>
+        </div>
+
+        <div class="receipt-details">
+          <div class="receipt-item"><span class="item-label">Contribution For:</span><span id="receipt-event">-</span></div>
+          <div class="receipt-item"><span class="item-label">Person Name:</span><span id="receipt-person">-</span></div>
+          <div class="receipt-item"><span class="item-label">ITS ID:</span><span id="receipt-itsid">-</span></div>
+          <div class="receipt-item"><span class="item-label">Mobile No:</span><span id="receipt-mobile">-</span></div>
+          <div class="receipt-item"><span class="item-label">Amount Paid:</span><span id="receipt-amount">Rs. 0/-</span></div>
+          <div class="receipt-item"><span class="item-label">Date:</span><span id="receipt-date">-</span></div>
+          <div class="receipt-item"><span class="item-label">Day:</span><span id="receipt-day">-</span></div>
+        </div>
+
+        <div class="signature">
+          <p style="margin-bottom:2px;"><strong>Mohammed Dilawer</strong> (Secretary)</p>
+          <p style="margin-top:0;line-height:1;">_________________________</p>
+          <p>Authorized Signature</p>
         </div>
       </div>
     </div>
@@ -331,6 +314,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       let allReceiptsData = [];
 
+      // ── Config ───────────────────────────────────────────────────────────────
       const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxIQ-UTZUrS0W-GtgoVCjXEACui3sf1tR2FbesFUEovx5wkqiUV1ECsUWSIRjothz9ivg/exec';
       const STORAGE_KEY     = 'toloba_sheet_url';
       const PRINTED_KEY     = 'toloba_printed_receipts';
@@ -339,6 +323,7 @@
       let   lastCsvText     = null;
       let   autoLoadTimer   = null;
 
+      // ── DOM refs ─────────────────────────────────────────────────────────────
       const eventNameInput  = document.getElementById('event-name');
       const personNameInput = document.getElementById('person-name');
       const itsIdInput      = document.getElementById('its-id');
@@ -360,6 +345,7 @@
       const downloadPdfBtn    = document.getElementById('download-pdf');
       const downloadSingleBtn = document.getElementById('download-single-pdf');
 
+      // ── Helpers ──────────────────────────────────────────────────────────────
       function showStatus(msg, type = 'info') {
         statusContainer.innerHTML = `<div class="status ${type}">${msg}</div>`;
       }
@@ -387,6 +373,7 @@
         receiptDay.textContent  = day;
       }
 
+      // ── Receipt preview ──────────────────────────────────────────────────────
       function generateSingleReceipt(data = null) {
         const { date, day } = getCurrentDateStrings();
         receiptEvent.textContent  = data?.eventName  || eventNameInput.value.trim()  || '-';
@@ -412,6 +399,7 @@
         eventNameInput.focus();
       }
 
+      // ── CSV helpers ──────────────────────────────────────────────────────────
       function convertShareUrlToCsvUrl(shareUrl) {
         const m = shareUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
         if (!m) throw new Error('Invalid Google Sheets URL.');
@@ -454,15 +442,16 @@
         };
         const { date, day } = getCurrentDateStrings();
         return {
-          eventName:  find('contribution','event','for','purpose') || '-',
-          personName: find('name','person','member')               || '-',
-          itsId:      find('its','itsid','its_id','its id','id')   || '-',
-          mobileNo:   find('mobile','phone','contact','number')    || '-',
-          amountPaid: find('amount','paid','fee','rs','rupee')     || '0',
+          eventName:  find('contribution','event','for','purpose')              || '-',
+          personName: find('name','person','member')             || '-',
+          itsId:      find('its','itsid','its_id','its id','id') || '-',
+          mobileNo:   find('mobile','phone','contact','number')  || '-',
+          amountPaid: find('amount','paid','fee','rs','rupee')   || '0',
           date, day
         };
       }
 
+      // ── Load sheet ───────────────────────────────────────────────────────────
       async function loadSheetData() {
         const url = sheetUrlInput.value.trim();
         if (!url) { showStatus('Please enter a Google Sheets URL.', 'error'); return; }
@@ -512,6 +501,7 @@
         }
       }
 
+      // ── Logo loader ──────────────────────────────────────────────────────────
       let logoBase64 = null;
       let logoMime   = 'PNG';
 
@@ -536,6 +526,7 @@
         } catch { return null; }
       }
 
+      // ── PDF builder ──────────────────────────────────────────────────────────
       function buildReceiptPage(pdf, receipt, logoB64) {
         if (logoB64) { try { pdf.addImage(logoB64, logoMime, 18, 13, 22, 22); } catch {} }
 
@@ -578,20 +569,30 @@
         pdf.text('Authorized Signature', 105, sigY + 9, { align:'center' });
       }
 
+      // ── Printed-receipt tracker ──────────────────────────────────────────────
       function getPrintedSet() {
         try { return new Set(JSON.parse(localStorage.getItem(PRINTED_KEY) || '[]')); }
         catch { return new Set(); }
       }
-      function savePrintedSet(set) { localStorage.setItem(PRINTED_KEY, JSON.stringify([...set])); }
-      function receiptFingerprint(r) {
-        return [r.personName, r.itsId, r.mobileNo, r.amountPaid, r.eventName].join('|').toLowerCase().trim();
+      function savePrintedSet(set) {
+        localStorage.setItem(PRINTED_KEY, JSON.stringify([...set]));
       }
-      function markPrintedLocal(r) { const s = getPrintedSet(); s.add(receiptFingerprint(r)); savePrintedSet(s); }
-      function isPrinted(r) { return getPrintedSet().has(receiptFingerprint(r)); }
+      function receiptFingerprint(r) {
+        return [r.personName, r.itsId, r.mobileNo, r.amountPaid, r.eventName]
+          .join('|').toLowerCase().trim();
+      }
+      function markPrintedLocal(r) {
+        const s = getPrintedSet(); s.add(receiptFingerprint(r)); savePrintedSet(s);
+      }
+      function isPrinted(r) {
+        return getPrintedSet().has(receiptFingerprint(r));
+      }
 
+      // ── Upload to Apps Script via hidden form (bypasses CORS + size limits) ────
       function uploadToAppsScript(receipt, pdfBase64, fileName) {
         if (!APPS_SCRIPT_URL) return;
         try {
+          // Use a hidden <form> POST — works from file://, no CORS, no size limit
           const form   = document.createElement('form');
           form.method  = 'POST';
           form.action  = APPS_SCRIPT_URL;
@@ -611,13 +612,14 @@
           };
 
           Object.entries(fields).forEach(([k, v]) => {
-            const input = document.createElement('input');
-            input.type  = 'hidden';
-            input.name  = k;
-            input.value = v || '';
+            const input  = document.createElement('input');
+            input.type   = 'hidden';
+            input.name   = k;
+            input.value  = v || '';
             form.appendChild(input);
           });
 
+          // Hidden iframe to absorb the response silently
           let iframe = document.getElementById('_hidden_upload');
           if (!iframe) {
             iframe      = document.createElement('iframe');
@@ -633,6 +635,7 @@
         } catch (err) { console.warn('Upload failed:', err); }
       }
 
+      // ── Sync printed fingerprints from server ────────────────────────────────
       async function syncPrintedFromServer() {
         if (!APPS_SCRIPT_URL) return;
         try {
@@ -644,9 +647,10 @@
             json.fingerprints.forEach(fp => local.add(fp));
             savePrintedSet(local);
           }
-        } catch { }
+        } catch { /* silent */ }
       }
 
+      // ── Download single PDF ──────────────────────────────────────────────────
       async function downloadSinglePDF() {
         try {
           downloadSingleBtn.disabled = true;
@@ -692,6 +696,7 @@
         }
       }
 
+      // ── Download all PDFs ────────────────────────────────────────────────────
       async function downloadAllPDF() {
         if (allReceiptsData.length === 0) {
           showStatus('No data loaded. Please load Google Sheets data first.', 'error');
@@ -745,7 +750,7 @@
         }
       }
 
-      // Sheet URL persistence
+      // ── Sheet URL persistence ────────────────────────────────────────────────
       const savedUrl = localStorage.getItem(STORAGE_KEY);
       if (savedUrl) {
         sheetUrlInput.value             = savedUrl;
@@ -791,6 +796,7 @@
         sheetUrlInput.focus();
       });
 
+      // ── Background polling ───────────────────────────────────────────────────
       async function silentRefresh() {
         const url = sheetUrlInput.value.trim();
         if (!url || !url.includes('docs.google.com/spreadsheets')) return;
@@ -825,16 +831,18 @@
           rs.style.transition = 'box-shadow 0.3s';
           rs.style.boxShadow  = '0 0 0 3px #4caf50';
           setTimeout(() => { rs.style.boxShadow = ''; }, 1500);
-        } catch { }
+        } catch { /* silent */ }
       }
 
       function startPolling() { stopPolling(); pollTimer = setInterval(silentRefresh, POLL_INTERVAL); }
       function stopPolling()  { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
 
+      // ── Event listeners ──────────────────────────────────────────────────────
       document.getElementById('load-sheet').addEventListener('click', () => loadSheetData());
 
       document.getElementById('generate-single').addEventListener('click', () => {
-        generateSingleReceipt();
+        generateSingleReceipt(); // fill preview from inputs
+        // Clear only the input fields — leave the receipt preview visible
         eventNameInput.value  = '';
         personNameInput.value = '';
         itsIdInput.value      = '';
@@ -846,6 +854,7 @@
       downloadSingleBtn.addEventListener('click', () => downloadSinglePDF());
       downloadPdfBtn.addEventListener('click',    () => downloadAllPDF());
 
+      // ── Startup ──────────────────────────────────────────────────────────────
       async function startup() {
         updateDateDisplay();
         await syncPrintedFromServer();
@@ -856,7 +865,33 @@
         }
       }
 
-      startup();
+      // startup() is called after login
+
+
+    // ── Login ─────────────────────────────────────────────────────────────────
+    const ALLOWED = ['7720876853', '9309574534', '9172941533'];
+
+    function normalise(n) { return n.replace(/\D/g, '').replace(/^91(\d{10})$/, '$1').slice(-10); }
+
+    function tryLogin() {
+      const raw = document.getElementById('login-phone').value.trim();
+      const num = normalise(raw);
+      const err = document.getElementById('login-error');
+      if (ALLOWED.some(a => normalise(a) === num)) {
+        document.getElementById('login-screen').classList.add('hidden');
+        err.classList.remove('show');
+        startup();
+      } else {
+        err.classList.add('show');
+        document.getElementById('login-phone').focus();
+      }
+    }
+
+    document.getElementById('login-btn').addEventListener('click', tryLogin);
+    document.getElementById('login-phone').addEventListener('keydown', e => {
+      if (e.key === 'Enter') tryLogin();
+    });
+
     });
   </script>
 </body>
