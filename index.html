@@ -223,7 +223,7 @@
       <div class="login-sub">Fakhri Mohalla Poona — Receipt Generator</div>
       <label class="login-label" for="login-phone">Enter your Mobile Number</label>
       <input type="tel" id="login-phone" class="login-input" placeholder="Enter phone number" maxlength="15" />
-      <button class="login-btn" id="login-btn">Access Generator</button>
+      <button class="login-btn" id="login-btn">Get Access</button>
       <div class="login-error" id="login-error">❌ Access denied. Phone number not authorized.</div>
     </div>
   </div>
@@ -322,11 +322,6 @@
       let   pollTimer       = null;
       let   lastCsvText     = null;
       let   autoLoadTimer   = null;
-
-      // ── Session tracking ─────────────────────────────────────────────────────
-      let sessionPhone        = '';
-      let sessionLoginTime    = null;
-      let sessionReceiptCount = 0;
 
       // ── DOM refs ─────────────────────────────────────────────────────────────
       const eventNameInput  = document.getElementById('event-name');
@@ -640,98 +635,6 @@
         } catch (err) { console.warn('Upload failed:', err); }
       }
 
-      // ── Log login to "Login Records" sheet ──────────────────────────────────
-      function logLoginToSheet(phone) {
-        if (!APPS_SCRIPT_URL) return;
-        try {
-          const form = document.createElement('form');
-          form.method = 'POST'; form.action = APPS_SCRIPT_URL;
-          form.target = '_hidden_upload'; form.style.display = 'none';
-          const fields = {
-            action:     'logLogin',
-            phone:      phone,
-            loginTime:  new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-            deviceInfo: navigator.userAgent.substring(0, 150)
-          };
-          Object.entries(fields).forEach(([k, v]) => {
-            const i = document.createElement('input');
-            i.type = 'hidden'; i.name = k; i.value = v || '';
-            form.appendChild(i);
-          });
-          let ifr = document.getElementById('_hidden_upload');
-          if (!ifr) {
-            ifr = document.createElement('iframe');
-            ifr.name = ifr.id = '_hidden_upload';
-            ifr.style.display = 'none';
-            document.body.appendChild(ifr);
-          }
-          document.body.appendChild(form);
-          form.submit();
-          setTimeout(() => form.remove(), 3000);
-        } catch (e) { console.warn('logLogin failed:', e); }
-      }
-
-      // ── Log each downloaded receipt to "Downloaded Receipts" sheet ───────────
-      function logDownloadToSheet(receipt, fileName) {
-        if (!APPS_SCRIPT_URL) return;
-        try {
-          const form = document.createElement('form');
-          form.method = 'POST'; form.action = APPS_SCRIPT_URL;
-          form.target = '_hidden_upload'; form.style.display = 'none';
-          const fields = {
-            action:       'logDownload',
-            downloadedBy: sessionPhone,
-            downloadedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-            personName:   receipt.personName,
-            itsId:        receipt.itsId,
-            mobileNo:     receipt.mobileNo,
-            eventName:    receipt.eventName,
-            amountPaid:   receipt.amountPaid,
-            date:         receipt.date,
-            fileName:     fileName,
-            fingerprint:  receiptFingerprint(receipt),
-            deviceInfo:   navigator.userAgent.substring(0, 150)
-          };
-          Object.entries(fields).forEach(([k, v]) => {
-            const i = document.createElement('input');
-            i.type = 'hidden'; i.name = k; i.value = v || '';
-            form.appendChild(i);
-          });
-          let ifr = document.getElementById('_hidden_upload');
-          if (!ifr) {
-            ifr = document.createElement('iframe');
-            ifr.name = ifr.id = '_hidden_upload';
-            ifr.style.display = 'none';
-            document.body.appendChild(ifr);
-          }
-          document.body.appendChild(form);
-          form.submit();
-          setTimeout(() => form.remove(), 3000);
-        } catch (e) { console.warn('logDownload failed:', e); }
-      }
-
-      // ── Send session summary (receipt count) when page closes ────────────────
-      function logSessionSummary() {
-        if (!APPS_SCRIPT_URL || !sessionPhone) return;
-        try {
-          const fields = {
-            action:       'logSessionSummary',
-            phone:        sessionPhone,
-            loginTime:    sessionLoginTime || '',
-            receiptCount: String(sessionReceiptCount),
-            summaryTime:  new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-          };
-          const body = Object.entries(fields)
-            .map(([k,v]) => encodeURIComponent(k)+'='+encodeURIComponent(v||''))
-            .join('&');
-          navigator.sendBeacon(
-            APPS_SCRIPT_URL + '?beacon=1',
-            new Blob([body], { type: 'application/x-www-form-urlencoded' })
-          );
-        } catch (e) { console.warn('logSessionSummary failed:', e); }
-      }
-      window.addEventListener('beforeunload', logSessionSummary);
-
       // ── Sync printed fingerprints from server ────────────────────────────────
       async function syncPrintedFromServer() {
         if (!APPS_SCRIPT_URL) return;
@@ -781,8 +684,6 @@
           pdf.save(fileName);
           markPrintedLocal(receipt);
           uploadToAppsScript(receipt, pdfBase64, fileName);
-          logDownloadToSheet(receipt, fileName);
-          sessionReceiptCount++;
 
           showStatus('✅ Receipt downloaded & saving to Drive…', 'success');
           clearForm();
@@ -830,8 +731,6 @@
             pdf.save(fileName);
             markPrintedLocal(receipt);
             uploadToAppsScript(receipt, pdfBase64, fileName);
-            logDownloadToSheet(receipt, fileName);
-            sessionReceiptCount++;
 
             if (i < newReceipts.length - 1) await new Promise(r => setTimeout(r, 350));
           }
@@ -981,9 +880,6 @@
       if (ALLOWED.some(a => normalise(a) === num)) {
         document.getElementById('login-screen').classList.add('hidden');
         err.classList.remove('show');
-        sessionPhone     = num;
-        sessionLoginTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-        logLoginToSheet(num);
         startup();
       } else {
         err.classList.add('show');
