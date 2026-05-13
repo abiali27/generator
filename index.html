@@ -223,7 +223,7 @@
       <div class="login-sub">Fakhri Mohalla Poona — Receipt Generator</div>
       <label class="login-label" for="login-phone">Enter your Mobile Number</label>
       <input type="tel" id="login-phone" class="login-input" placeholder="Enter phone number" maxlength="15" />
-      <button class="login-btn" id="login-btn">Get Access </button>
+      <button class="login-btn" id="login-btn">Access Generator</button>
       <div class="login-error" id="login-error">❌ Access denied. Phone number not authorized.</div>
     </div>
   </div>
@@ -608,7 +608,8 @@
             date:        receipt.date,
             fileName:    fileName,
             fingerprint: receiptFingerprint(receipt),
-            pdfBase64:   pdfBase64
+            pdfBase64:   pdfBase64,
+            whoPrinted:  localStorage.getItem('user_phone') || 'Unknown'
           };
 
           Object.entries(fields).forEach(([k, v]) => {
@@ -880,6 +881,7 @@
       if (ALLOWED.some(a => normalise(a) === num)) {
         document.getElementById('login-screen').classList.add('hidden');
         err.classList.remove('show');
+        localStorage.setItem('user_phone', raw);
         startup();
       } else {
         err.classList.add('show');
