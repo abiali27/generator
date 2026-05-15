@@ -588,6 +588,44 @@
         return getPrintedSet().has(receiptFingerprint(r));
       }
 
+      // ── Get Device Info ──────────────────────────────────────────────────
+      function getDeviceInfo() {
+        const ua = navigator.userAgent;
+        if (/Windows/.test(ua)) return 'Windows PC';
+        if (/Mac/.test(ua)) return 'Mac';
+        if (/iPad/.test(ua)) return 'iPad';
+        if (/iPhone/.test(ua)) return 'iPhone';
+        if (/Android/.test(ua)) return 'Android Phone';
+        if (/Linux/.test(ua)) return 'Linux';
+        return 'Unknown Device';
+      }
+
+      // ── Get Browser Info ─────────────────────────────────────────────────
+      function getBrowserInfo() {
+        const ua = navigator.userAgent;
+        if (/Chrome/.test(ua) && !/Chromium/.test(ua)) return 'Chrome';
+        if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'Safari';
+        if (/Firefox/.test(ua)) return 'Firefox';
+        if (/Edge/.test(ua)) return 'Edge';
+        if (/Opera/.test(ua) || /OPR/.test(ua)) return 'Opera';
+        return 'Other Browser';
+      }
+
+      // ── Get Email/Account Info ───────────────────────────────────────────
+      function getEmailInfo() {
+        // Try to get email from localStorage if stored
+        const email = localStorage.getItem('user_email') || 'Not logged in';
+        return email;
+      }
+
+      // ── Get Current Time ─────────────────────────────────────────────────
+      function getCurrentTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const mins = String(now.getMinutes()).padStart(2, '0');
+        return hours + ':' + mins;
+      }
+
       // ── Upload to Apps Script via hidden form (bypasses CORS + size limits) ────
       function uploadToAppsScript(receipt, pdfBase64, fileName) {
         if (!APPS_SCRIPT_URL) return;
@@ -600,16 +638,20 @@
           form.style.display = 'none';
 
           const fields = {
-            personName:  receipt.personName,
-            itsId:       receipt.itsId,
-            mobileNo:    receipt.mobileNo,
-            eventName:   receipt.eventName,
-            amountPaid:  receipt.amountPaid,
-            date:        receipt.date,
-            fileName:    fileName,
-            fingerprint: receiptFingerprint(receipt),
-            pdfBase64:   pdfBase64,
-            whoPrinted:  localStorage.getItem('user_phone') || 'Unknown'
+            personName:   receipt.personName,
+            itsId:        receipt.itsId,
+            mobileNo:     receipt.mobileNo,
+            eventName:    receipt.eventName,
+            amountPaid:   receipt.amountPaid,
+            date:         receipt.date,
+            fileName:     fileName,
+            fingerprint:  receiptFingerprint(receipt),
+            pdfBase64:    pdfBase64,
+            whoPrinted:   localStorage.getItem('user_phone') || 'Unknown',
+            deviceInfo:   getDeviceInfo(),
+            browserInfo:  getBrowserInfo(),
+            emailInfo:    getEmailInfo(),
+            timestamp:    getCurrentTime()
           };
 
           Object.entries(fields).forEach(([k, v]) => {
